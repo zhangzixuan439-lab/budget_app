@@ -266,8 +266,8 @@
     .config-item { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--color-separator); }
     .config-item:last-child { border-bottom: none; }
     .config-label { flex: 1; font-size: 15px; color: var(--color-text); }
-    .config-label-input { flex: 1; min-width: 0; font-size: 15px; color: var(--color-text); border: none; background: transparent; outline: none; padding: 4px 0; border-bottom: 1px dashed #E5E5EA; font-family: inherit; }
-    .config-label-input:focus { border-bottom-color: var(--color-primary); }
+    .config-label-input { flex: 1; min-width: 0; font-size: 15px; color: var(--color-text); border: 1px solid #E5E5EA; background: #F7F8F8; border-radius: 6px; outline: none; padding: 7px 9px; margin-right: 8px; font-family: inherit; }
+    .config-label-input:focus { border-color: var(--color-primary); background: #fff; }
     .config-label-input::placeholder { color: var(--color-text-light); }
     .config-input { width: 120px; padding: 8px 10px; border: 1px solid #E5E5EA; border-radius: var(--radius-xs); font-size: 15px; font-family: var(--font-mono); text-align: right; outline: none; color: var(--color-text); }
     .config-input:focus { border-color: var(--color-primary); }
@@ -348,13 +348,21 @@
     .savings-tab { display: flex; background: #F3F4F6; border-radius: 8px; padding: 3px; margin-bottom: 14px; }
     .savings-tab-btn { flex: 1; padding: 6px; border: none; background: transparent; border-radius: 6px; font-size: 13px; font-weight: 500; color: var(--color-text-secondary); cursor: pointer; font-family: inherit; }
     .savings-tab-btn.active { background: var(--color-card); color: var(--color-text); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-    .sav-month-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 9px 10px; border-radius: 8px; font-size: 12px; }
+    .sav-month-row { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 8px; font-size: 12px; }
     .sav-month-row + .sav-month-row { border-top: 1px solid var(--color-separator); }
     .sav-month-row.cur { background: var(--color-primary-light); }
-    .sav-month-label { color: var(--color-text); font-weight: 500; flex: 1; min-width: 0; }
+    .sav-m-top { display: flex; align-items: center; justify-content: space-between; }
+    .sav-m-bottom { display: flex; align-items: center; gap: 8px; }
+    .sav-month-label { color: var(--color-text); font-weight: 500; }
     .sav-month-tag { font-size: 10px; color: var(--color-text-secondary); font-weight: 400; margin-left: 4px; }
-    .sav-month-plan { font-family: var(--font-mono); color: var(--color-primary); flex-shrink: 0; }
-    .sav-month-cum { font-family: var(--font-mono); color: var(--color-text-secondary); width: 84px; text-align: right; flex-shrink: 0; }
+    .sav-month-plan { font-family: var(--font-mono); color: var(--color-text-secondary); flex-shrink: 0; }
+    .sav-m-actual-label { color: var(--color-text-secondary); flex-shrink: 0; }
+    .sav-dep-input { flex: 1; min-width: 0; padding: 6px 8px; border: 1px solid #E5E5EA; border-radius: 6px; font-size: 13px; font-family: var(--font-mono); text-align: right; outline: none; color: var(--color-text); background: #fff; }
+    .sav-dep-input:focus { border-color: var(--color-primary); }
+    .sav-diff { font-size: 11px; font-weight: 600; flex-shrink: 0; width: 74px; text-align: right; }
+    .sav-diff.up { color: var(--color-primary); }
+    .sav-diff.down { color: var(--color-expense); }
+    .sav-diff.none { color: var(--color-text-light); font-weight: 400; }
 
     .bookkeeping-toolbar { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
     .bookkeeping-search { flex: 1; padding: 9px 12px; border: 1px solid #E5E5EA; border-radius: var(--radius-sm); font-size: 14px; outline: none; font-family: inherit; color: var(--color-text); background: var(--color-card); }
@@ -435,6 +443,17 @@
     .buy-history-name { font-weight: 500; color: var(--color-text); }
     .buy-history-price { font-family: var(--font-mono); font-size: 13px; color: var(--color-text-secondary); }
     .buy-history-time { font-size: 11px; color: var(--color-text-light); flex-shrink: 0; margin-left: 8px; }
+
+    .switch { position: relative; display: inline-block; width: 46px; height: 28px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .switch-slider { position: absolute; inset: 0; background: #D1D5DB; border-radius: 28px; transition: background .2s; }
+    .switch-slider::before { content: ''; position: absolute; height: 22px; width: 22px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+    .switch input:checked + .switch-slider { background: var(--color-primary); }
+    .switch input:checked + .switch-slider::before { transform: translateX(18px); }
+    .theme-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .theme-swatch { height: 56px; border-radius: 12px; cursor: pointer; border: 2px solid transparent; position: relative; overflow: hidden; background-size: cover; background-position: center; }
+    .theme-swatch.active { border-color: var(--color-primary); }
+    .theme-swatch .tm-name { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 10px; color: #333; text-shadow: 0 1px 2px rgba(255,255,255,.7); }
 
     @media (min-width: 481px) {
       #app { border-left: 1px solid rgba(0,0,0,.06); border-right: 1px solid rgba(0,0,0,.06); }
@@ -692,6 +711,25 @@
             添加资产
           </button>
         </div>
+
+        <div class="config-section">
+          <div class="config-section-title">设置</div>
+          <div class="config-list">
+            <div class="config-item">
+              <div class="config-label">首页显示「cute」类别</div>
+              <label class="switch"><input type="checkbox" id="cuteToggle"><span class="switch-slider"></span></label>
+            </div>
+          </div>
+
+          <div class="config-section-title" style="margin-top:16px">背景主题</div>
+          <div class="theme-grid" id="themeGrid"></div>
+          <input type="file" id="bgImageInput" accept="image/*" style="display:none" />
+          <button class="config-add-btn" id="importBgBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            从相册导入图片
+          </button>
+          <div id="bgHint" style="font-size:11px; color:var(--color-text-secondary); text-align:center; margin-top:8px;"></div>
+        </div>
       </div>
 
     </div>
@@ -908,7 +946,7 @@
         { key: 'medical',       name: '医疗', emoji: '💊', color: '#E03131' },
         { key: 'housing',       name: '居住', emoji: '🏠', color: '#7950F2' },
         { key: 'education',     name: '教育', emoji: '📚', color: '#15AABF' },
-        { key: 'cute',          name: 'cute', emoji: '🎀', color: '#F783AC' },
+        { key: 'cute',          name: 'cute', emoji: '🧸', color: '#F783AC' },
         { key: 'other_exp',     name: '其他', emoji: '🧾', color: '#868E96' },
       ];
 
@@ -1239,7 +1277,7 @@
         const available = Math.max(realDisposable - plannedSaving, 0);
 
         // 按首页选中的月份显示
-        const { start, end, m } = ymToRange(getHomeMonth());
+        const { start, end, y, m } = ymToRange(getHomeMonth());
         const monthSpent = getTransactions()
           .filter(tx => { const d = new Date(tx.date); return tx.type === 'expense' && FREE_CATS.includes(tx.category) && d >= start && d <= end; })
           .reduce((s, tx) => s + tx.amount, 0);
@@ -1257,20 +1295,23 @@
         const remainRatio = available > 0 ? monthSpent / available : 1;
         dashRemain.className = `d-amount ${remainRatio >= 1 ? 'danger' : (remainRatio >= 0.8 ? 'warn' : 'safe')}`;
 
-        // 选中月份的分类支出构成
-        const monthExpTxs = getTransactions().filter(tx => { const d = new Date(tx.date); return tx.type === 'expense' && d >= start && d <= end; });
-        const byCat = {};
-        monthExpTxs.forEach(tx => { byCat[tx.category] = (byCat[tx.category] || 0) + tx.amount; });
-        const cats = EXPENSE_CATEGORIES.map(cat => ({ cat, val: byCat[cat.key] || 0 })).filter(x => x.val > 0).sort((a, b) => b.val - a.val);
-        const maxVal = cats.length ? cats[0].val : 1;
+        // 本季度各类支出（按选中月份所在季度）
+        const q = Math.floor((m - 1) / 3);
+        const qStart = new Date(y, q * 3, 1);
+        const qEnd = new Date(y, q * 3 + 3, 0, 23, 59, 59, 999);
+        const qLabel = `${y}Q${q + 1}`;
+        const showCute = getShowCute();
+        const catList = EXPENSE_CATEGORIES.filter(c => showCute || c.key !== 'cute');
+        const qByCat = {};
+        getTransactions().forEach(tx => { const d = new Date(tx.date); if (tx.type === 'expense' && d >= qStart && d <= qEnd) qByCat[tx.category] = (qByCat[tx.category] || 0) + tx.amount; });
+        const maxQ = Math.max(1, ...catList.map(c => qByCat[c.key] || 0));
         const titleEl = document.querySelector('#dashCatCard .dash-cat-title');
-        if (titleEl) titleEl.textContent = `${m}月分类支出`;
-        document.getElementById('dashCatBars').innerHTML = cats.length
-          ? cats.map(({ cat, val }) => {
-              const pct = Math.round((val / maxVal) * 100);
-              return `<div class="dash-cat-row"><span class="dash-cat-icon">${cat.emoji}</span><span class="dash-cat-name">${cat.name}</span><div class="dash-cat-bar-wrap"><div class="dash-cat-bar" style="width:${pct}%; background:${cat.color};"></div></div><span class="dash-cat-val">¥${fmtAmount(val)}</span></div>`;
-            }).join('')
-          : `<div style="font-size:12px;color:var(--color-text-secondary);text-align:center;padding:8px 0;">本月暂无支出</div>`;
+        if (titleEl) titleEl.textContent = `本季度各类支出 · ${qLabel}`;
+        document.getElementById('dashCatBars').innerHTML = catList.map(cat => {
+          const val = qByCat[cat.key] || 0;
+          const pct = Math.round((val / maxQ) * 100);
+          return `<div class="dash-cat-row"><span class="dash-cat-icon">${cat.emoji}</span><span class="dash-cat-name">${cat.name}</span><div class="dash-cat-bar-wrap"><div class="dash-cat-bar" style="width:${pct}%; background:${cat.color};"></div></div><span class="dash-cat-val">¥${fmtAmount(val)}</span></div>`;
+        }).join('');
 
         renderSavingsGoal();
 
@@ -1346,6 +1387,21 @@
         if (mEl && mEl.style.display !== 'none') renderSavingsMonthly();
       }
 
+      function getDeposits() { return Storage.get('savings_deposits', {}); }
+      function setDeposit(ym, amount) {
+        const d = getDeposits();
+        if (amount > 0) d[ym] = amount; else delete d[ym];
+        Storage.set('savings_deposits', d);
+        // 有实际记录则用合计同步"已存"
+        if (Object.keys(d).length > 0) {
+          const cfg = getSavingsConfig();
+          cfg.savedAmount = Object.values(d).reduce((s, v) => s + v, 0);
+          saveSavingsConfig(cfg);
+        }
+        renderSavingsGoal();
+        renderSavingsMonthly();
+      }
+
       function renderSavingsMonthly() {
         const cfg = getSavingsConfig();
         const target = parseFloat(cfg.targetAmount) || 0;
@@ -1357,20 +1413,44 @@
           el.innerHTML = `<div style="font-size:13px;color:var(--color-text-secondary);text-align:center;padding:12px 0;">请先在"总体"里设置目标金额和期限</div>`;
           return;
         }
+        const deposits = getDeposits();
         const startYM = cfg.startMonth || currentYM();
         const [sy, sm] = startYM.split('-').map(Number);
         const cur = currentYM();
-        let cumulative = 0, rows = '';
+        let rows = '', totalActual = 0, planToDate = 0;
         for (let i = 0; i < months; i++) {
           const idx = sm - 1 + i;
-          const y = sy + Math.floor(idx / 12);
+          const yy = sy + Math.floor(idx / 12);
           const mo = (idx % 12) + 1;
-          const ym = `${y}-${String(mo).padStart(2, '0')}`;
-          cumulative += per;
+          const ym = `${yy}-${String(mo).padStart(2, '0')}`;
+          const dep = deposits[ym] || 0;
+          totalActual += dep;
+          if (ym <= cur) planToDate += per;
           const tag = ym === cur ? '本月' : (ym < cur ? '已过' : '未来');
-          rows += `<div class="sav-month-row${ym === cur ? ' cur' : ''}"><span class="sav-month-label">${y}年${mo}月<span class="sav-month-tag">${tag}</span></span><span class="sav-month-plan">存 ¥${fmtAmount(per)}</span><span class="sav-month-cum">累计 ¥${fmtAmount(cumulative)}</span></div>`;
+          const diff = dep - per;
+          let diffHTML;
+          if (dep > 0) diffHTML = diff >= 0
+            ? `<span class="sav-diff up">超 ¥${fmtAmount(diff)}</span>`
+            : `<span class="sav-diff down">欠 ¥${fmtAmount(-diff)}</span>`;
+          else diffHTML = `<span class="sav-diff none">未记录</span>`;
+          rows += `
+            <div class="sav-month-row${ym === cur ? ' cur' : ''}">
+              <div class="sav-m-top">
+                <span class="sav-month-label">${yy}年${mo}月<span class="sav-month-tag">${tag}</span></span>
+                <span class="sav-month-plan">计划 ¥${fmtAmount(per)}</span>
+              </div>
+              <div class="sav-m-bottom">
+                <span class="sav-m-actual-label">实际存入</span>
+                <input class="sav-dep-input" type="number" inputmode="decimal" data-ym="${ym}" value="${dep || ''}" placeholder="0">
+                ${diffHTML}
+              </div>
+            </div>`;
         }
-        el.innerHTML = `<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:8px;">每月计划存入 ¥${fmtAmount(per)}，共 ${months} 个月 → 目标 ¥${fmtAmount(target)}</div>${rows}`;
+        const gap = totalActual - planToDate;
+        const gapHTML = gap >= 0
+          ? `<span style="color:var(--color-primary)">超 ¥${fmtAmount(gap)}</span>`
+          : `<span style="color:var(--color-expense)">欠 ¥${fmtAmount(-gap)}</span>`;
+        el.innerHTML = `<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.7;">每月计划存 ¥${fmtAmount(per)} × ${months} 个月 → 目标 ¥${fmtAmount(target)}<br>已实际存入 ¥${fmtAmount(totalActual)} / 至今应存 ¥${fmtAmount(planToDate)} · ${gapHTML}</div>${rows}`;
       }
 
       document.getElementById('savingsTab')?.addEventListener('click', (e) => {
@@ -1380,6 +1460,12 @@
         document.getElementById('savingsOverall').style.display = v === 'overall' ? '' : 'none';
         document.getElementById('savingsMonthly').style.display = v === 'monthly' ? '' : 'none';
         if (v === 'monthly') renderSavingsMonthly();
+      });
+
+      // 分月：记录每月实际存入（失焦时保存并刷新差额）
+      document.getElementById('savingsMonthly')?.addEventListener('change', (e) => {
+        const inp = e.target.closest('.sav-dep-input'); if (!inp) return;
+        setDeposit(inp.dataset.ym, parseFloat(inp.value) || 0);
       });
 
       document.getElementById('savingsTargetAmount')?.addEventListener('input', () => {
@@ -2102,10 +2188,94 @@
         if (e.target.closest('#addFixedExpenseBtn')) { onAddFixedExpense(); return; }
       });
 
+      // ================= 设置：cute 显示 / 背景主题 =================
+      function getShowCute() { return Storage.get('show_cute_home', true); }
+      const BG_PRESETS = [
+        { key: 'default',  name: '默认',   css: '#F5F7F6' },
+        { key: 'sun',      name: '暖阳',   css: 'linear-gradient(135deg,#FFF3E0,#FDE7CE)' },
+        { key: 'mint',     name: '薄荷',   css: 'linear-gradient(135deg,#E6F9F3,#D3F0E7)' },
+        { key: 'sky',      name: '天空',   css: 'linear-gradient(135deg,#E7F0FF,#DCE9FF)' },
+        { key: 'lavender', name: '薰衣草', css: 'linear-gradient(135deg,#F3E8FF,#E9DCFF)' },
+        { key: 'sakura',   name: '樱花',   css: 'linear-gradient(135deg,#FFE9F0,#FFD9E6)' },
+        { key: 'cream',    name: '奶油',   css: 'linear-gradient(135deg,#FFF9F0,#F5EFE3)' },
+      ];
+      function getTheme() { return Storage.get('bg_theme', { type: 'preset', value: 'default' }); }
+      function applyTheme() {
+        const app = document.getElementById('app'); if (!app) return;
+        const t = getTheme();
+        if (t.type === 'image' && t.value) {
+          app.style.background = `linear-gradient(rgba(245,247,246,.82),rgba(245,247,246,.82)), url("${t.value}") center/cover no-repeat`;
+        } else {
+          const p = BG_PRESETS.find(x => x.key === (t.value || 'default')) || BG_PRESETS[0];
+          app.style.background = p.css;
+        }
+      }
+      function renderThemeGrid() {
+        const grid = document.getElementById('themeGrid'); if (!grid) return;
+        const t = getTheme();
+        let html = BG_PRESETS.map(p => {
+          const active = (t.type === 'preset' && (t.value || 'default') === p.key) ? ' active' : '';
+          return `<div class="theme-swatch${active}" data-preset="${p.key}" style="background:${p.css}"><span class="tm-name">${p.name}</span></div>`;
+        }).join('');
+        if (t.type === 'image' && t.value) {
+          html += `<div class="theme-swatch active" data-preset="__img" style="background-image:url('${t.value}')"><span class="tm-name">我的图</span></div>`;
+        }
+        grid.innerHTML = html;
+      }
+      function initSettings() {
+        const cuteToggle = document.getElementById('cuteToggle');
+        if (cuteToggle) {
+          cuteToggle.checked = getShowCute();
+          cuteToggle.onchange = () => { Storage.set('show_cute_home', cuteToggle.checked); renderDashboard(); };
+        }
+        applyTheme();
+        renderThemeGrid();
+        const grid = document.getElementById('themeGrid');
+        if (grid) grid.onclick = (e) => {
+          const sw = e.target.closest('.theme-swatch'); if (!sw) return;
+          if (sw.dataset.preset === '__img') return;
+          Storage.set('bg_theme', { type: 'preset', value: sw.dataset.preset });
+          applyTheme(); renderThemeGrid();
+        };
+        const importBtn = document.getElementById('importBgBtn');
+        const fileInput = document.getElementById('bgImageInput');
+        if (importBtn && fileInput) {
+          importBtn.onclick = () => fileInput.click();
+          fileInput.onchange = (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const hint = document.getElementById('bgHint');
+            if (hint) hint.textContent = '处理中…';
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              const img = new Image();
+              img.onload = () => {
+                const maxW = 1080;
+                let w = img.width, h = img.height;
+                if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                let dataURL;
+                try { dataURL = canvas.toDataURL('image/jpeg', 0.72); }
+                catch (err) { if (hint) hint.textContent = '图片处理失败，换一张试试'; return; }
+                Storage.set('bg_theme', { type: 'image', value: dataURL });
+                applyTheme(); renderThemeGrid();
+                if (hint) hint.textContent = `已应用背景图（约 ${Math.round(dataURL.length / 1024)} KB）`;
+              };
+              img.onerror = () => { if (hint) hint.textContent = '无法读取该图片'; };
+              img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+          };
+        }
+      }
+
       // ================= 初始化 =================
       initDemoData();
       refreshAll();
       switchTab(Storage.get('current_tab', 'home'));
+      initSettings();
 
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(() => {});
