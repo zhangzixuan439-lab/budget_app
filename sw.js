@@ -2,7 +2,7 @@
  * Service Worker — Cache-First 离线策略
  * PWA 可安装、离线可用
  */
-const CACHE_NAME = 'youxiao-huaqian-v8';
+const CACHE_NAME = 'youxiao-huaqian-v9';
 const CACHE_URLS = [
   './',
   './index.html',
@@ -29,8 +29,22 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
-  );
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  // HTML 页面：网络优先（在线永远拿最新），离线再回退缓存
+  const isHTML = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
+  if (isHTML) {
+    event.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(req, copy));
+        return res;
+      }).catch(() => caches.match(req).then((r) => r || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // 其它资源：缓存优先
+  event.respondWith(caches.match(req).then((cached) => cached || fetch(req)));
 });
