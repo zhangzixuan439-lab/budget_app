@@ -1,0 +1,18 @@
+{
+  "name": "有效花钱",
+  "short_name": "有效花钱",
+  "description": "清新绿个人财务管理 PWA — 记账、预算、该不该买决策助手",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#12B886",
+  "background_color": "#F5F7F6",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%2312B886'/><stop offset='100%' style='stop-color:%230E9E73'/></linearGradient></defs><rect width='512' height='512' rx='112' fill='url(%23g)'/><circle cx='256' cy='200' r='90' fill='none' stroke='white' stroke-width='28' stroke-linecap='round'/><rect x='242' y='190' width='28' height='8' rx='4' fill='url(%23g)'/><text x='256' y='360' text-anchor='middle' font-size='180' fill='white' font-family='Arial, sans-serif' font-weight='bold'>¥</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
