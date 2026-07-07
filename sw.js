@@ -2,7 +2,7 @@
  * Service Worker — Cache-First 离线策略
  * PWA 可安装、离线可用
  */
-const CACHE_NAME = 'youxiao-huaqian-v6';
+const CACHE_NAME = 'youxiao-huaqian-v8';
 const CACHE_URLS = [
   './',
   './index.html',

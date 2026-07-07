@@ -1144,18 +1144,32 @@
       }
 
       // ================= 记账：按月分组 + 分类汇总 =================
+      function getBkMonths() {
+        const months = new Map();
+        getTransactions().forEach(tx => {
+          const d = new Date(tx.date);
+          const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          months.set(ym, `${d.getFullYear()}年${d.getMonth() + 1}月`);
+        });
+        return [...months.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+      }
+      function getBkActiveMonth() {
+        const sorted = getBkMonths();
+        const stored = Storage.get('bk_active_month', null);
+        if (stored === 'all') return 'all';
+        if (stored && sorted.some(([ym]) => ym === stored)) return stored;
+        return sorted.length ? sorted[0][0] : 'all';
+      }
+
       function getFilteredTxs() {
         const search = (document.getElementById('bkSearch')?.value || '').trim().toLowerCase();
         let txs = getTransactions().sort((a, b) => new Date(b.date) - new Date(a.date));
-        const activeMonthBtn = document.querySelector('.bk-month-btn.active');
-        if (activeMonthBtn) {
-          const ym = activeMonthBtn.dataset.ym;
-          if (ym) {
-            txs = txs.filter(tx => {
-              const d = new Date(tx.date);
-              return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === ym;
-            });
-          }
+        const ym = getBkActiveMonth();
+        if (ym && ym !== 'all') {
+          txs = txs.filter(tx => {
+            const d = new Date(tx.date);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === ym;
+          });
         }
         if (search) {
           txs = txs.filter(tx => {
@@ -1170,18 +1184,13 @@
       }
 
       function buildMonthDateFilter() {
-        const txs = getTransactions();
-        const months = new Map();
-        txs.forEach(tx => {
-          const d = new Date(tx.date);
-          const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-          months.set(ym, `${d.getFullYear()}年${d.getMonth() + 1}月`);
-        });
-        const sorted = [...months.entries()].sort((a, b) => b[0].localeCompare(a[0]));
         const container = document.getElementById('bkDateFilter');
+        if (!container) return;
+        const sorted = getBkMonths();
         if (sorted.length === 0) { container.innerHTML = ''; return; }
-        const active = Storage.get('bk_active_month', sorted[0][0]);
-        container.innerHTML = sorted.map(([ym, label]) =>
+        const active = getBkActiveMonth();
+        const btns = [['all', '全部'], ...sorted];
+        container.innerHTML = btns.map(([ym, label]) =>
           `<button class="bk-month-btn${ym === active ? ' active' : ''}" data-ym="${ym}">${label}</button>`
         ).join('');
         container.onclick = (e) => {
@@ -1235,19 +1244,10 @@
           return;
         }
         emptyEl.style.display = 'none';
-        const activeMonthBtn = document.querySelector('.bk-month-btn.active');
-        const activeYM = activeMonthBtn ? activeMonthBtn.dataset.ym : null;
-        if (activeYM) {
-          const monthTxs = txs.filter(tx => {
-            const d = new Date(tx.date);
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === activeYM;
-          });
-          renderCategorySummary(monthTxs);
-          document.getElementById('bkSubtitle').textContent = activeMonthBtn.textContent;
-        } else {
-          renderCategorySummary(txs);
-          document.getElementById('bkSubtitle').textContent = '全部收支记录';
-        }
+        const activeYM = getBkActiveMonth();
+        const monthsMap = Object.fromEntries(getBkMonths());
+        document.getElementById('bkSubtitle').textContent = (activeYM && activeYM !== 'all' && monthsMap[activeYM]) ? monthsMap[activeYM] : '全部收支记录';
+        renderCategorySummary(txs);
         const groups = new Map();
         txs.forEach(tx => {
           const d = new Date(tx.date);
@@ -1844,18 +1844,20 @@
 
       document.getElementById('buyActions')?.addEventListener('click', (e) => {
         const btn = e.target.closest('.buy-act-btn');
-        if (!btn || !lastBuyResult) return;
+        if (!btn || btn.disabled || !lastBuyResult) return;
         if (btn.dataset.act === 'wish') {
           const w = getWishlist();
           w.unshift({ id: nextWishId(), name: lastBuyResult.name, price: lastBuyResult.price, category: lastBuyResult.category, verdict: lastBuyResult.verdict, createdAt: new Date().toISOString(), coolDays: 7, status: 'waiting' });
           saveWishlist(w);
           renderWishlist();
-          btn.textContent = '已加入心愿单 ✓'; btn.disabled = true;
+          btn.textContent = '已加入心愿单 ✓';
         } else if (btn.dataset.act === 'saved') {
           addSaved(lastBuyResult.name, lastBuyResult.price, 'block');
           renderAchievement(); renderMonthReport();
-          btn.textContent = '已记录 · 省下 ✓'; btn.disabled = true;
+          btn.textContent = '已记录 · 省下 ✓';
         }
+        // 同一个物品只记一次：两个按钮都禁用
+        e.currentTarget.querySelectorAll('.buy-act-btn').forEach(b => { b.disabled = true; });
       });
 
       document.getElementById('wishList')?.addEventListener('click', (e) => {
