@@ -1799,7 +1799,12 @@
       function renderMonthReport() {
         const el = document.getElementById('reportBody');
         if (!el) return;
-        const { start, end, y, m } = ymToRange(getHomeMonth());
+        // 小结始终按当前真实月份，不跟随首页翻看的历史月
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth() + 1;
+        const start = new Date(y, m - 1, 1);
+        const end = new Date(y, m, 0, 23, 59, 59, 999);
         const txs = getTransactions();
         const inMonth = txs.filter(t => { const d = new Date(t.date); return d >= start && d <= end; });
         const exp = inMonth.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
@@ -1814,15 +1819,45 @@
         const ym = `${y}-${String(m).padStart(2, '0')}`;
         const dep = (getDeposits()[ym]) || 0;
         const savedMonth = getSaved().filter(r => { const d = new Date(r.date); return d >= start && d <= end; });
+        const savedSum = savedMonth.reduce((s, r) => s + r.price, 0);
+
         const lines = [];
-        lines.push(`💸 本月支出 ¥${fmtAmount(exp)}` + (prevExp > 0 ? `，较上月 ${exp >= prevExp ? '↑' : '↓'} ${Math.round(Math.abs(exp - prevExp) / prevExp * 100)}%` : ''));
-        if (topCat) { const c = getCatByKey(topCat); lines.push(`${c ? c.emoji : '📦'} 最大开支：${c ? c.name : topCat} ¥${fmtAmount(topVal)}`); }
-        if (per > 0) lines.push(`🏦 存钱：计划 ¥${fmtAmount(per)} / 实际 ¥${fmtAmount(dep)}${dep >= per ? '（达标 ✅）' : `（欠 ¥${fmtAmount(per - dep)}）`}`);
-        if (savedMonth.length) lines.push(`🛡️ 拦截 ${savedMonth.length} 次，省下 ¥${fmtAmount(savedMonth.reduce((s, r) => s + r.price, 0))}`);
-        lines.push(`🧮 本月结余 ¥${fmtAmount(inc - exp)}`);
+        // 支出对比（毒舌教练）
+        if (exp === 0) {
+          lines.push(`🌑 ${m}月一笔没记？是没花钱，还是不敢面对？`);
+        } else if (prevExp === 0) {
+          lines.push(`💸 本月花了 ¥${fmtAmount(exp)}，先记着，下月好跟你算账`);
+        } else if (exp < prevExp) {
+          lines.push(`👀 花了 ¥${fmtAmount(exp)}，比上月收敛了 ¥${fmtAmount(prevExp - exp)}（↓${Math.round((1 - exp / prevExp) * 100)}%），勉强给你个赞`);
+        } else if (exp > prevExp) {
+          lines.push(`💸 花了 ¥${fmtAmount(exp)}，比上月还多 ¥${fmtAmount(exp - prevExp)}（↑${Math.round((exp / prevExp - 1) * 100)}%），手是漏的吧？`);
+        } else {
+          lines.push(`💸 花了 ¥${fmtAmount(exp)}，跟上月一分不差，主打一个稳定发挥`);
+        }
+        // 最大开支
+        if (topCat) {
+          const c = getCatByKey(topCat);
+          lines.push(`🕳️ 「${c ? c.name : topCat}」又干掉 ¥${fmtAmount(topVal)}，这类是无底洞是吧`);
+        }
+        // 存钱
+        if (per > 0) {
+          if (dep >= per) lines.push(`🏦 存钱居然达标了 ¥${fmtAmount(dep)}？太阳打西边出来了 ⭐`);
+          else if (dep > 0) lines.push(`🏦 才存 ¥${fmtAmount(dep)}/¥${fmtAmount(per)}，还差 ¥${fmtAmount(per - dep)}，这点自制力？`);
+          else lines.push(`🏦 目标 ¥${fmtAmount(per)}，本月存了个寂寞，醒醒`);
+        }
+        // 拦截省下
+        if (savedMonth.length > 0) {
+          lines.push(`🛡️ 忍住 ${savedMonth.length} 次没剁手，省下 ¥${fmtAmount(savedSum)}，难得清醒一回`);
+        }
+        // 结余
+        const bal = inc - exp;
+        if (bal > 0) lines.push(`🧮 结余 ¥${fmtAmount(bal)}，这次没月光，给你留点面子`);
+        else if (bal < 0) lines.push(`🧮 结余 -¥${fmtAmount(-bal)}，又超支了，下月吃土套餐了解一下`);
+        else lines.push(`🧮 收支打平，一分没剩，惊险过关`);
+
         el.innerHTML = lines.map(l => `<div class="report-line">${l}</div>`).join('');
         const titleEl = document.querySelector('#reportCard .report-title');
-        if (titleEl) titleEl.textContent = `${m}月小结`;
+        if (titleEl) titleEl.textContent = `😼 ${m}月小结`;
       }
 
       function renderAnomaly() {
