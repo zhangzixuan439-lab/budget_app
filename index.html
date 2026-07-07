@@ -1327,7 +1327,8 @@
       function getMonthStart() { const now = new Date(); return new Date(now.getFullYear(), now.getMonth(), 1); }
       function getQuarterStart() { const now = new Date(); return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1); }
 
-      const FREE_CATS = ['food', 'digital', 'beauty', 'shopping', 'entertainment', 'medical', 'education', 'other_exp'];
+      // 自由支配花销 = 除"居住"(房租已在固定支出里)外的所有分类，新增分类自动纳入
+      const FREE_CATS = EXPENSE_CATEGORIES.map(c => c.key).filter(k => k !== 'housing');
 
       function renderDashboard() {
         const realDisposable = calcDisposable(getFinanceConfig());
