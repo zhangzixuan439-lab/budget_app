@@ -455,6 +455,33 @@
     .theme-swatch.active { border-color: var(--color-primary); }
     .theme-swatch .tm-name { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 10px; color: #333; text-shadow: 0 1px 2px rgba(255,255,255,.7); }
 
+    .achieve-card { padding: 16px 20px; }
+    .achieve-row { display: flex; }
+    .achieve-item { flex: 1; text-align: center; }
+    .achieve-item + .achieve-item { border-left: 1px solid var(--color-separator); }
+    .a-label { font-size: 12px; color: var(--color-text-secondary); }
+    .a-amount { font-family: var(--font-mono); font-size: 24px; font-weight: 700; color: var(--color-primary); margin: 3px 0; }
+    .a-sub { font-size: 11px; color: var(--color-text-secondary); }
+    .report-card { padding: 18px 20px; }
+    .report-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; color: var(--color-text); }
+    .report-line { font-size: 13px; color: var(--color-text); padding: 5px 0; line-height: 1.5; }
+    .anomaly-item { display: flex; align-items: center; gap: 6px; background: #FFF3BF; color: #B76E00; border-radius: 12px; padding: 10px 14px; font-size: 13px; margin-bottom: 8px; line-height: 1.4; }
+    .buy-actions { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .buy-actions:empty { display: none; }
+    .buy-act-btn { width: 100%; padding: 13px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; border: none; }
+    .buy-act-btn:disabled { opacity: .6; }
+    .buy-act-btn.hold { background: var(--color-primary); color: #fff; }
+    .buy-act-btn.saved { background: #FFF3BF; color: #B76E00; }
+    .wish-item { display: flex; align-items: center; gap: 10px; background: var(--color-card); border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 13px 16px; margin-bottom: 10px; }
+    .wish-info { flex: 1; min-width: 0; }
+    .wish-name { font-size: 15px; font-weight: 500; color: var(--color-text); }
+    .wish-meta { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+    .wish-meta.ready { color: var(--color-primary); font-weight: 600; }
+    .wish-btns { display: flex; gap: 6px; flex-shrink: 0; }
+    .wish-btn { border: none; border-radius: 8px; padding: 7px 11px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .wish-btn.drop { background: var(--color-primary-light); color: var(--color-primary); }
+    .wish-btn.buy { background: #F3F4F6; color: var(--color-text-secondary); }
+
     @media (min-width: 481px) {
       #app { border-left: 1px solid rgba(0,0,0,.06); border-right: 1px solid rgba(0,0,0,.06); }
     }
@@ -478,6 +505,8 @@
         </div>
 
         <div class="bookkeeping-date-filter" id="homeMonthFilter"></div>
+
+        <div id="anomalyBanner"></div>
 
         <div class="card overview-card" id="overviewCard">
           <div class="overview-label">本月结余</div>
@@ -556,6 +585,11 @@
           <div id="savingsMonthly" style="display:none"></div>
         </div>
 
+        <div class="card report-card" id="reportCard">
+          <div class="report-title">本月小结</div>
+          <div id="reportBody"></div>
+        </div>
+
         <div class="section-header">
           <span class="section-title">最近交易</span>
           <span class="section-more" data-tab="bookkeeping">查看全部</span>
@@ -580,6 +614,13 @@
           </div>
         </div>
 
+        <div class="card achieve-card">
+          <div class="achieve-row">
+            <div class="achieve-item"><div class="a-label">本月省下</div><div class="a-amount" id="achieveMonth">¥0</div><div class="a-sub" id="achieveMonthCnt">拦截 0 次</div></div>
+            <div class="achieve-item"><div class="a-label">累计省下</div><div class="a-amount" id="achieveTotal">¥0</div><div class="a-sub" id="achieveTotalCnt">共 0 次</div></div>
+          </div>
+        </div>
+
         <div class="buy-form">
           <input type="text" class="buy-input" id="buyName" placeholder="想买什么，如：AirPods Pro 2" maxlength="30" />
           <input type="text" class="buy-input buy-price-input" id="buyPrice" placeholder="价格 ¥" inputmode="decimal" maxlength="12" />
@@ -593,6 +634,7 @@
           <div class="card buy-verdict-card" id="buyVerdictCard"></div>
           <div class="card buy-reasons-card" id="buyReasonsCard"></div>
           <div class="buy-advice" id="buyAdvice"></div>
+          <div class="buy-actions" id="buyActions"></div>
 
           <div class="buy-quiz" id="buyQuiz">
             <div class="buy-quiz-title">快速追问（帮你更准确判断）</div>
@@ -622,6 +664,11 @@
             </div>
             <div class="buy-quiz-score" id="buyQuizScore">必要性评分：6 / 6</div>
           </div>
+        </div>
+
+        <div class="config-section" id="wishSection" style="display:none">
+          <div class="config-section-title">心愿单 · 冷静期</div>
+          <div id="wishList"></div>
         </div>
 
         <div class="config-section" id="buyHistorySection" style="display:none">
@@ -1235,6 +1282,10 @@
         renderFinanceConfig();
         renderAssets();
         renderDashboard();
+        renderAchievement();
+        renderWishlist();
+        renderMonthReport();
+        renderAnomaly();
       }
 
       // ================= 存钱计划（修复3：可支配要扣掉每月计划存钱） =================
@@ -1641,6 +1692,15 @@
           `).join('')}
         `;
         document.getElementById('buyAdvice').innerHTML = `💬 <strong>教练建议：</strong>${result.verdict === '不建议' ? '这笔钱更该花在' : '如果决定不买，这笔钱更该花在'}<strong>${result.betterAdvice}</strong>`;
+
+        lastBuyResult = result;
+        const actionsEl = document.getElementById('buyActions');
+        if (actionsEl) {
+          actionsEl.innerHTML = result.verdict === '建议购买' ? '' : `
+            <button class="buy-act-btn hold" data-act="wish">🧊 忍住 · 加入心愿单（冷静 7 天）</button>
+            <button class="buy-act-btn saved" data-act="saved">✅ 听劝没买 · 省下 ¥${fmtAmount(result.price)}</button>`;
+        }
+
         resultEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
@@ -1673,6 +1733,141 @@
         }).join('');
       }
       renderBuyHistory();
+
+      // ================= 省钱成就 / 心愿单 / 月报 / 异常提醒 =================
+      let lastBuyResult = null;
+
+      function getSaved() { return Storage.get('saved_records', []); }
+      function addSaved(name, price, from) {
+        const arr = getSaved();
+        arr.unshift({ name, price, date: new Date().toISOString(), from });
+        Storage.set('saved_records', arr);
+      }
+      function renderAchievement() {
+        const arr = getSaved();
+        const now = new Date();
+        const cs = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthArr = arr.filter(r => new Date(r.date) >= cs);
+        const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        set('achieveMonth', `¥${fmtAmount(monthArr.reduce((s, r) => s + r.price, 0))}`);
+        set('achieveMonthCnt', `拦截 ${monthArr.length} 次`);
+        set('achieveTotal', `¥${fmtAmount(arr.reduce((s, r) => s + r.price, 0))}`);
+        set('achieveTotalCnt', `共 ${arr.length} 次`);
+      }
+
+      function getWishlist() { return Storage.get('wishlist', []); }
+      function saveWishlist(w) { Storage.set('wishlist', w); }
+      function nextWishId() { const id = Storage.get('wish_next_id', 1); Storage.set('wish_next_id', id + 1); return id; }
+      function renderWishlist() {
+        const w = getWishlist().filter(x => x.status === 'waiting');
+        const section = document.getElementById('wishSection');
+        const list = document.getElementById('wishList');
+        if (!section || !list) return;
+        if (!w.length) { section.style.display = 'none'; list.innerHTML = ''; return; }
+        section.style.display = 'block';
+        const now = Date.now();
+        list.innerHTML = w.map(item => {
+          const created = new Date(item.createdAt).getTime();
+          const daysLeft = (item.coolDays || 7) - Math.floor((now - created) / 86400000);
+          const cat = getCatByKey(item.category);
+          const ready = daysLeft <= 0;
+          const metaTxt = ready ? '冷静期已过 · 还想买吗？' : `还需冷静 ${daysLeft} 天`;
+          return `
+            <div class="wish-item" data-id="${item.id}">
+              <div class="tx-icon" style="background:${cat ? cat.color + '20' : '#eee'}; color:${cat ? cat.color : '#888'}">${cat ? cat.emoji : '🛍️'}</div>
+              <div class="wish-info">
+                <div class="wish-name">${item.name} · ¥${fmtAmount(item.price)}</div>
+                <div class="wish-meta${ready ? ' ready' : ''}">${metaTxt}</div>
+              </div>
+              <div class="wish-btns">
+                <button class="wish-btn drop" data-wact="drop">放弃</button>
+                <button class="wish-btn buy" data-wact="buy">买了</button>
+              </div>
+            </div>`;
+        }).join('');
+      }
+
+      function renderMonthReport() {
+        const el = document.getElementById('reportBody');
+        if (!el) return;
+        const { start, end, y, m } = ymToRange(getHomeMonth());
+        const txs = getTransactions();
+        const inMonth = txs.filter(t => { const d = new Date(t.date); return d >= start && d <= end; });
+        const exp = inMonth.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+        const inc = inMonth.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+        const prevStart = new Date(y, m - 2, 1), prevEnd = new Date(y, m - 1, 0, 23, 59, 59, 999);
+        const prevExp = txs.filter(t => { const d = new Date(t.date); return t.type === 'expense' && d >= prevStart && d <= prevEnd; }).reduce((s, t) => s + t.amount, 0);
+        const byCat = {};
+        inMonth.filter(t => t.type === 'expense').forEach(t => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
+        let topCat = null, topVal = 0;
+        Object.entries(byCat).forEach(([k, v]) => { if (v > topVal) { topVal = v; topCat = k; } });
+        const per = getPlannedMonthlySaving();
+        const ym = `${y}-${String(m).padStart(2, '0')}`;
+        const dep = (getDeposits()[ym]) || 0;
+        const savedMonth = getSaved().filter(r => { const d = new Date(r.date); return d >= start && d <= end; });
+        const lines = [];
+        lines.push(`💸 本月支出 ¥${fmtAmount(exp)}` + (prevExp > 0 ? `，较上月 ${exp >= prevExp ? '↑' : '↓'} ${Math.round(Math.abs(exp - prevExp) / prevExp * 100)}%` : ''));
+        if (topCat) { const c = getCatByKey(topCat); lines.push(`${c ? c.emoji : '📦'} 最大开支：${c ? c.name : topCat} ¥${fmtAmount(topVal)}`); }
+        if (per > 0) lines.push(`🏦 存钱：计划 ¥${fmtAmount(per)} / 实际 ¥${fmtAmount(dep)}${dep >= per ? '（达标 ✅）' : `（欠 ¥${fmtAmount(per - dep)}）`}`);
+        if (savedMonth.length) lines.push(`🛡️ 拦截 ${savedMonth.length} 次，省下 ¥${fmtAmount(savedMonth.reduce((s, r) => s + r.price, 0))}`);
+        lines.push(`🧮 本月结余 ¥${fmtAmount(inc - exp)}`);
+        el.innerHTML = lines.map(l => `<div class="report-line">${l}</div>`).join('');
+        const titleEl = document.querySelector('#reportCard .report-title');
+        if (titleEl) titleEl.textContent = `${m}月小结`;
+      }
+
+      function renderAnomaly() {
+        const el = document.getElementById('anomalyBanner');
+        if (!el) return;
+        const now = new Date();
+        const curStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const txs = getTransactions();
+        const curByCat = {};
+        txs.forEach(t => { const d = new Date(t.date); if (t.type === 'expense' && d >= curStart && d <= now) curByCat[t.category] = (curByCat[t.category] || 0) + t.amount; });
+        const alerts = [];
+        EXPENSE_CATEGORIES.forEach(cat => {
+          const cur = curByCat[cat.key] || 0;
+          if (cur < 100) return;
+          let sum = 0;
+          for (let i = 1; i <= 3; i++) {
+            const s = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const e = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
+            sum += txs.filter(t => { const d = new Date(t.date); return t.type === 'expense' && t.category === cat.key && d >= s && d <= e; }).reduce((a, t) => a + t.amount, 0);
+          }
+          const avg = sum / 3;
+          if (avg > 0 && cur > avg * 1.4) {
+            alerts.push(`${cat.emoji} 本月「${cat.name}」已花 ¥${fmtAmount(cur)}，超近3月均值 ${Math.round((cur / avg - 1) * 100)}%`);
+          }
+        });
+        el.innerHTML = alerts.map(a => `<div class="anomaly-item">⚠️ ${a}</div>`).join('');
+      }
+
+      document.getElementById('buyActions')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.buy-act-btn');
+        if (!btn || !lastBuyResult) return;
+        if (btn.dataset.act === 'wish') {
+          const w = getWishlist();
+          w.unshift({ id: nextWishId(), name: lastBuyResult.name, price: lastBuyResult.price, category: lastBuyResult.category, verdict: lastBuyResult.verdict, createdAt: new Date().toISOString(), coolDays: 7, status: 'waiting' });
+          saveWishlist(w);
+          renderWishlist();
+          btn.textContent = '已加入心愿单 ✓'; btn.disabled = true;
+        } else if (btn.dataset.act === 'saved') {
+          addSaved(lastBuyResult.name, lastBuyResult.price, 'block');
+          renderAchievement(); renderMonthReport();
+          btn.textContent = '已记录 · 省下 ✓'; btn.disabled = true;
+        }
+      });
+
+      document.getElementById('wishList')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.wish-btn'); if (!btn) return;
+        const id = parseInt(btn.closest('.wish-item').dataset.id, 10);
+        const w = getWishlist();
+        const item = w.find(x => x.id === id); if (!item) return;
+        if (btn.dataset.wact === 'drop') { item.status = 'dropped'; addSaved(item.name, item.price, 'wishlist'); }
+        else { item.status = 'bought'; }
+        saveWishlist(w);
+        renderWishlist(); renderAchievement(); renderMonthReport();
+      });
 
       // ================= CSV 导入 =================
       let csvParsedRows = [];
