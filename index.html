@@ -278,6 +278,8 @@
     .income-month-input { border: 1px solid #E5E5EA; border-radius: 8px; padding: 7px 10px; font-size: 14px; font-family: var(--font-mono); color: var(--color-text); outline: none; background: #fff; }
     .income-month-input:focus { border-color: var(--color-primary); }
     .income-hint { font-size: 11px; color: var(--color-text-secondary); margin-top: 8px; padding: 0 4px; line-height: 1.5; }
+    .backup-hint { font-size: 11px; color: var(--color-text-secondary); line-height: 1.6; padding: 12px 14px; margin-bottom: 10px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: var(--radius-sm); }
+    .backup-status { font-size: 11px; color: var(--color-primary); text-align: center; margin-top: 10px; line-height: 1.5; min-height: 14px; }
     .income-month-badge { font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
     .income-month-badge.own { background: #E6F7EC; color: #2F9E44; }
     .income-month-badge.inherit { background: #FFF4E6; color: #E8590C; }
@@ -822,6 +824,24 @@
         </div>
 
         <div class="config-section">
+          <div class="config-section-title">数据备份</div>
+          <div class="backup-hint">
+            记账数据只存在<strong>当前这个浏览器</strong>里，服务器上没有副本。<br>
+            换手机、清缓存、换网址前，先「导出备份」，到新地方再「导入备份」。
+          </div>
+          <button class="config-add-btn" id="exportBackupBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            导出备份（JSON 文件）
+          </button>
+          <input type="file" id="importBackupInput" accept="application/json,.json" style="display:none" />
+          <button class="config-add-btn" id="importBackupBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            导入备份（会覆盖当前数据）
+          </button>
+          <div class="backup-status" id="backupStatus"></div>
+        </div>
+
+        <div class="config-section">
           <div class="config-section-title">设置</div>
           <div class="config-list">
             <div class="config-item">
@@ -1043,6 +1063,20 @@
         remove(key) {
           try { localStorage.removeItem(PREFIX + key); } catch (e) {}
           delete mem[key];
+        },
+        // 备份用：导出 / 导入全部 mcfo_ 数据
+        dump() {
+          const out = {};
+          if (!ok) { Object.keys(mem).forEach(k => { out[k] = mem[k]; }); return out; }
+          for (let i = 0; i < localStorage.length; i++) {
+            const full = localStorage.key(i);
+            if (!full || full.indexOf(PREFIX) !== 0) continue;
+            try { out[full.slice(PREFIX.length)] = JSON.parse(localStorage.getItem(full)); } catch (e) {}
+          }
+          return out;
+        },
+        restore(obj) {
+          Object.keys(obj).forEach(k => this.set(k, obj[k]));
         }
       };
     })();
@@ -1081,28 +1115,6 @@
 
       function getCatIconHTML(cat) {
         return `<div class="tx-icon" style="background:${cat.color}20; color:${cat.color}">${cat.emoji}</div>`;
-      }
-
-      // ================= 演示数据 =================
-      function initDemoData() {
-        if (Storage.get('transactions')) return;
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = now.getMonth();
-        const demos = [
-          { id: 1,  type: 'income',  category: 'salary',        amount: 15000, source: 'bank',   note: '本月工资',    date: new Date(y, m, 1).toISOString() },
-          { id: 2,  type: 'expense', category: 'food',          amount: 35.8,  source: 'wechat', note: '午餐外卖',    date: new Date(y, m, 5).toISOString() },
-          { id: 3,  type: 'expense', category: 'transport',     amount: 15,    source: 'alipay', note: '地铁通勤',    date: new Date(y, m, 4).toISOString() },
-          { id: 4,  type: 'expense', category: 'shopping',      amount: 128,   source: 'wechat', note: '超市购物',    date: new Date(y, m, 3).toISOString() },
-          { id: 5,  type: 'expense', category: 'digital',       amount: 299,   source: 'alipay', note: '蓝牙耳机',    date: new Date(y, m, 3).toISOString() },
-          { id: 6,  type: 'income',  category: 'parttime',      amount: 2000,  source: 'bank',   note: '兼职收入',    date: new Date(y, m, 4).toISOString() },
-          { id: 7,  type: 'expense', category: 'beauty',        amount: 88,    source: 'wechat', note: '理发',        date: new Date(y, m, 2).toISOString() },
-          { id: 8,  type: 'expense', category: 'food',          amount: 22.5,  source: 'alipay', note: '早餐',        date: new Date(y, m, 6).toISOString() },
-          { id: 9,  type: 'expense', category: 'entertainment', amount: 158,   source: 'wechat', note: '电影+零食',   date: new Date(y, m, 1).toISOString() },
-          { id: 10, type: 'expense', category: 'housing',       amount: 2500,  source: 'bank',   note: '房租',        date: new Date(y, m, 1).toISOString() },
-        ];
-        Storage.set('transactions', demos);
-        Storage.set('next_id', 11);
       }
 
       function getTransactions() { return Storage.get('transactions', []); }
@@ -1418,17 +1430,24 @@
 
       // ================= 累计（自记账起始月 2026-07 起） =================
       const STATS_START_YM = '2026-07';
+      // 累计范围：起始月 → 当前月（未填的月份沿用最近一次收入）
+      // 外加「已经明确填过收入的未来月份」——比如 7 月底就把 8 月工资填好了，也该算进累计
       function monthsSinceStart() {
-        const end = currentYM();
-        if (end < STATS_START_YM) return [];
+        const cur = currentYM();
         const out = [];
-        let [y, m] = STATS_START_YM.split('-').map(Number);
-        for (let guard = 0; guard < 600; guard++) {
-          const ym = `${y}-${String(m).padStart(2, '0')}`;
-          out.push(ym);
-          if (ym >= end) break;
-          m++; if (m > 12) { m = 1; y++; }
+        if (cur >= STATS_START_YM) {
+          let [y, m] = STATS_START_YM.split('-').map(Number);
+          for (let guard = 0; guard < 600; guard++) {
+            const ym = `${y}-${String(m).padStart(2, '0')}`;
+            out.push(ym);
+            if (ym >= cur) break;
+            m++; if (m > 12) { m = 1; y++; }
+          }
         }
+        Object.keys(Storage.get('income_by_month', {}))
+          .filter(ym => ym > cur && ym >= STATS_START_YM)
+          .sort()
+          .forEach(ym => out.push(ym));
         return out;
       }
       // 累计到手剩余 = Σ(该月到手 + 该月记账收入 − 该月全部支出)；同时累计公积金、医保
@@ -2188,11 +2207,11 @@
       // ================= 我的财务 =================
       // 收入项固定 5 项：id 永不变（旧数据靠 id 对齐），label 以代码为准，value 按月单独存储
       const INCOME_ITEM_DEFS = [
-        { id: 1, label: '税前工资',          def: 18000 },
-        { id: 2, label: '到手月收入',        def: 13500 },
-        { id: 3, label: '公积金(个人+公司)', def: 4320 },
-        { id: 4, label: '房补',              def: 1500 },
-        { id: 5, label: '其他补贴',          def: 800 },
+        { id: 1, label: '税前工资',          def: 0 },
+        { id: 2, label: '到手月收入',        def: 0 },
+        { id: 3, label: '公积金(个人+公司)', def: 0 },
+        { id: 4, label: '房补',              def: 0 },
+        { id: 5, label: '其他补贴',          def: 0 },
         { id: 6, label: '医保(个人+公司)',   def: 0 },
       ];
       const INCOME_ID = { pretax: 1, afterTax: 2, fund: 3, housing: 4, other: 5, medical: 6 };
@@ -2211,15 +2230,15 @@
       function incomeVal(income, id) { return (income.find(i => i.id === id) || {}).value || 0; }
       function getDefaultFixedExpenses() {
         return [
-          { id: 1, label: '房租', value: 2500 },
-          { id: 2, label: '每月订阅', value: 199 },
-          { id: 3, label: '通勤', value: 300 },
+          { id: 1, label: '房租', value: 0 },
+          { id: 2, label: '每月订阅', value: 0 },
+          { id: 3, label: '通勤', value: 0 },
         ];
       }
       // 固定支出：全局（每月一致）
       function getFixedExpenses() { return Storage.get('finance_fixed_expenses', getDefaultFixedExpenses()); }
       function saveFixedExpenses(list) { Storage.set('finance_fixed_expenses', list); }
-      function getFixedNextId() { return Storage.get('finance_next_fixed_id', 4); }
+      function getFixedNextId() { return Storage.get('finance_next_fixed_id', 4); }  // 默认固定支出 3 项占用 id 1-3
       function setFixedNextId(v) { Storage.set('finance_next_fixed_id', v); }
       function getTotalFixed() { return getFixedExpenses().reduce((s, it) => s + (it.value || 0), 0); }
 
@@ -2355,16 +2374,9 @@
       });
 
       // ================= 资产与会员 =================
-      function getDefaultAssets() {
-        return [
-          { id: 1, name: 'AirPods Pro', type: 'item', category: 'digital', status: 'active', note: '' },
-          { id: 2, name: 'Netflix订阅', type: 'member', category: 'entertainment', status: 'expiring', note: '2025年8月到期' },
-          { id: 3, name: '健身卡', type: 'service', category: 'other_exp', status: 'idle', note: '很少去' },
-        ];
-      }
-      function getAssets() { return Storage.get('assets', getDefaultAssets()); }
+      function getAssets() { return Storage.get('assets', []); }
       function saveAssets(assets) { Storage.set('assets', assets); }
-      function getNextAssetId() { const id = Storage.get('next_asset_id', 4); Storage.set('next_asset_id', id + 1); return id; }
+      function getNextAssetId() { const id = Storage.get('next_asset_id', 1); Storage.set('next_asset_id', id + 1); return id; }
       function getAssetTypeLabel(type) { return { item: '物品', member: '会员', service: '服务' }[type] || type; }
       function getAssetStatusLabel(status) { return { active: '在用', idle: '闲置', expiring: '即将到期' }[status] || status; }
       function buildAssetItemHTML(asset) {
@@ -2441,6 +2453,66 @@
         openAssetModal(parseInt(item.dataset.id, 10));
       });
       document.getElementById('addAssetBtn')?.addEventListener('click', () => openAssetModal(null));
+
+      // ================= 数据备份：导出 / 导入 =================
+      function setBackupStatus(msg) {
+        const el = document.getElementById('backupStatus');
+        if (el) el.textContent = msg || '';
+      }
+      function exportBackup() {
+        const data = Storage.dump();
+        const payload = {
+          app: '有效花钱',
+          schema: 1,
+          exportedAt: new Date().toISOString(),
+          data,
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `有效花钱-备份-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        const txs = Array.isArray(data.transactions) ? data.transactions.length : 0;
+        const months = Object.keys(data.income_by_month || {}).length;
+        setBackupStatus(`已导出：${txs} 条记账、${months} 个月的收入配置`);
+      }
+      function importBackup(file) {
+        const reader = new FileReader();
+        reader.onerror = () => setBackupStatus('文件读取失败');
+        reader.onload = () => {
+          let payload;
+          try { payload = JSON.parse(reader.result); }
+          catch (e) { alert('解析失败，这不是有效的备份文件'); return; }
+          // 兼容两种格式：完整 payload，或直接是 data 对象
+          const data = (payload && payload.data && typeof payload.data === 'object') ? payload.data : payload;
+          if (!data || typeof data !== 'object' || Array.isArray(data)) { alert('备份文件格式不对'); return; }
+          if (!('transactions' in data) && !('income_by_month' in data)) {
+            alert('这个文件里没有记账数据，可能不是「有效花钱」的备份');
+            return;
+          }
+          const txs = Array.isArray(data.transactions) ? data.transactions.length : 0;
+          const when = (payload && payload.exportedAt) ? payload.exportedAt.slice(0, 10) : '未知日期';
+          const nowTxs = getTransactions().length;
+          if (!confirm(`导入 ${when} 的备份（${txs} 条记账）\n\n当前设备上的 ${nowTxs} 条记账会被覆盖，确定继续？`)) return;
+          Storage.restore(data);
+          setBackupStatus('导入成功，正在刷新…');
+          setTimeout(() => location.reload(), 400);
+        };
+        reader.readAsText(file);
+      }
+      document.getElementById('exportBackupBtn')?.addEventListener('click', exportBackup);
+      document.getElementById('importBackupBtn')?.addEventListener('click', () => {
+        document.getElementById('importBackupInput').click();
+      });
+      document.getElementById('importBackupInput')?.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) importBackup(file);
+        e.target.value = '';  // 同一个文件可重复选
+      });
 
       // ================= Tab 切换 =================
       const tabBar = document.getElementById('tabBar');
@@ -2714,7 +2786,6 @@
       }
 
       // ================= 初始化 =================
-      initDemoData();
       refreshAll();
       switchTab(Storage.get('current_tab', 'home'));
       initSettings();
