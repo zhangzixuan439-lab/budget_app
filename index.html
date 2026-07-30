@@ -331,10 +331,20 @@
     .calc-name { font-size: 14px; font-weight: 700; color: var(--color-text); margin-bottom: 6px; }
     .calc-formula { font-family: var(--font-mono); font-size: 12px; color: var(--color-primary); background: var(--color-primary-light); padding: 8px 10px; border-radius: 6px; line-height: 1.7; font-variant-numeric: tabular-nums; word-break: break-word; }
     .calc-note { font-size: 11px; color: var(--color-text-secondary); line-height: 1.6; margin-top: 6px; }
-    .dash-row.cols4 { gap: 6px; }
-    .dash-row.cols4 .dash-item { padding: 12px 4px; min-width: 0; }
-    .dash-row.cols4 .d-amount { font-size: 16px; letter-spacing: -0.4px; }
-    .dash-item .d-label .d-sub { display: block; font-size: 9px; opacity: 0.75; margin-top: 1px; }
+    .dash-row.cols3 .dash-item { padding: 12px 6px; min-width: 0; }
+    .dash-row.cols3 .d-amount { font-size: 18px; letter-spacing: -0.4px; }
+    /* 位数超出列宽时自动降字号，保证永不溢出 */
+    .dash-row.cols3 .d-amount.tight  { font-size: 15px; letter-spacing: -0.6px; }
+    .dash-row.cols3 .d-amount.tight2 { font-size: 13px; letter-spacing: -0.7px; }
+    .dash-item .d-label .d-sub { display: block; font-size: 9px; opacity: 0.7; margin-top: 1px; }
+    /* 累计剩余：单独整行，宽度不受限，位数再多也不挤 */
+    .cum-card { padding: 14px 18px; margin-bottom: 8px; }
+    .cum-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+    .cum-title { font-size: 12px; color: var(--color-text-secondary); }
+    .cum-months { font-size: 11px; color: var(--color-text-light); white-space: nowrap; }
+    .cum-amount { font-family: var(--font-mono); font-size: 28px; font-weight: 700; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
+    .cum-amount.safe { color: var(--color-primary); }
+    .cum-amount.danger { color: var(--color-expense); }
     .other-fund-card { margin-bottom: 16px; }
     .other-fund-title { font-size: 13px; font-weight: 600; color: var(--color-text); margin-bottom: 12px; }
     .other-fund-row { display: flex; gap: 8px; }
@@ -571,23 +581,27 @@
           <div class="progress-bar-label" id="progressLabel">暂无数据</div>
         </div>
 
-        <div class="dash-row cols4" id="dashRow">
+        <div class="dash-row cols3" id="dashRow">
           <div class="dash-item">
-            <div class="d-label">可支配·扣存钱</div>
+            <div class="d-label">可支配<span class="d-sub">扣存钱</span></div>
             <div class="d-amount safe" id="dashDisposable">¥0</div>
           </div>
           <div class="dash-item">
-            <div class="d-label">日常已花</div>
+            <div class="d-label">日常已花<span class="d-sub">不含非常规</span></div>
             <div class="d-amount warn" id="dashSpent">¥0</div>
           </div>
           <div class="dash-item">
             <div class="d-label">剩余<span class="d-sub">不含非常规</span></div>
             <div class="d-amount safe" id="dashRemain">¥0</div>
           </div>
-          <div class="dash-item">
-            <div class="d-label">累计剩余<span class="d-sub" id="cumStartLabel">—</span></div>
-            <div class="d-amount safe" id="dashCumBalance">¥0</div>
+        </div>
+
+        <div class="card cum-card">
+          <div class="cum-head">
+            <span class="cum-title">累计剩余 · <span id="cumStartLabel">—</span> 起</span>
+            <span class="cum-months" id="cumMonths">—</span>
           </div>
+          <div class="cum-amount safe" id="dashCumBalance">¥0</div>
         </div>
         <button class="dash-hint-btn" id="dashHintBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
@@ -1149,11 +1163,14 @@
       }
 
       // ================= 格式化 =================
+      // 精确金额：整数不带小数，带小数固定两位。两种情况都补千分位
       function fmtAmount(n) {
         const abs = Math.abs(n);
         if (Number.isInteger(abs)) return abs.toLocaleString('zh-CN');
-        return abs.toFixed(2);
+        return abs.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       }
+      // 概览卡片用：四舍五入到整元，省掉小数点的宽度（精确值在「怎么算的」弹窗里）
+      function fmtInt(n) { return Math.round(Math.abs(n)).toLocaleString('zh-CN'); }
 
       // ================= 交易列表项 =================
       const SOURCE_LABELS = { wechat: '微信', alipay: '支付宝', cash: '现金', bank: '银行卡', other: '其他' };
@@ -1538,7 +1555,7 @@
             <div class="calc-formula">${b.formula.replace(/\n/g, '<br>')}</div>
             <div class="calc-note">${b.note}</div>
           </div>
-        `).join('');
+        `).join('') + `<div class="calc-note" style="padding-top:12px">以上为精确值。首页卡片上的数字四舍五入到整元，可能相差几角。</div>`;
       }
 
       // ================= 首页驾驶舱 =================
@@ -1559,32 +1576,37 @@
         const irregular = getMonthIrregularSpent(ym);
         const remaining = available - monthSpent;
 
-        const dashDisposable = document.getElementById('dashDisposable');
-        dashDisposable.textContent = `¥${fmtAmount(available)}`;
-        dashDisposable.className = `d-amount ${available > 0 ? 'safe' : 'danger'}`;
-
-        document.getElementById('dashSpent').textContent = `¥${fmtAmount(monthSpent)}`;
-        document.getElementById('dashSpent').className = `d-amount ${monthSpent > available ? 'danger' : 'warn'}`;
-
-        const dashRemain = document.getElementById('dashRemain');
-        dashRemain.textContent = `${remaining < 0 ? '-' : ''}¥${fmtAmount(remaining)}`;
+        // 概览磁贴统一用整元（fmtInt），省掉小数点宽度；精确值在「怎么算的」弹窗里
+        // 3 列每列约放 8 个字符，超了自动降字号
+        const setTile = (id, text, tone) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.textContent = text;
+          const fit = text.length >= 11 ? ' tight2' : (text.length >= 9 ? ' tight' : '');
+          el.className = `d-amount ${tone}${fit}`;
+        };
+        setTile('dashDisposable', `¥${fmtInt(available)}`, available > 0 ? 'safe' : 'danger');
+        setTile('dashSpent', `¥${fmtInt(monthSpent)}`, monthSpent > available ? 'danger' : 'warn');
         const remainRatio = available > 0 ? monthSpent / available : 1;
-        dashRemain.className = `d-amount ${remainRatio >= 1 ? 'danger' : (remainRatio >= 0.8 ? 'warn' : 'safe')}`;
+        setTile('dashRemain', `${remaining < 0 ? '-' : ''}¥${fmtInt(remaining)}`,
+          remainRatio >= 1 ? 'danger' : (remainRatio >= 0.8 ? 'warn' : 'safe'));
 
         const cum = getCumulative();
         const cumMonths = monthsElapsed();
         const startLabel = statsStartYM().replace('-', '.');
         const dashCum = document.getElementById('dashCumBalance');
         if (dashCum) {
-          dashCum.textContent = `${cum.balance < 0 ? '-' : ''}¥${fmtAmount(cum.balance)}`;
-          dashCum.className = `d-amount ${cum.balance >= 0 ? 'safe' : 'danger'}`;
+          dashCum.textContent = `${cum.balance < 0 ? '-' : ''}¥${fmtInt(cum.balance)}`;
+          dashCum.className = `cum-amount ${cum.balance >= 0 ? 'safe' : 'danger'}`;
         }
         const cumStartLabel = document.getElementById('cumStartLabel');
-        if (cumStartLabel) cumStartLabel.textContent = `${startLabel}起`;
+        if (cumStartLabel) cumStartLabel.textContent = startLabel;
+        const cumMonthsEl = document.getElementById('cumMonths');
+        if (cumMonthsEl) cumMonthsEl.textContent = `共 ${cumMonths.length} 个月`;
         const cumFund = document.getElementById('cumFund');
-        if (cumFund) cumFund.textContent = `¥${fmtAmount(cum.fund)}`;
+        if (cumFund) cumFund.textContent = `¥${fmtInt(cum.fund)}`;
         const cumMedical = document.getElementById('cumMedical');
-        if (cumMedical) cumMedical.textContent = `¥${fmtAmount(cum.medical)}`;
+        if (cumMedical) cumMedical.textContent = `¥${fmtInt(cum.medical)}`;
         const ofRange = document.getElementById('otherFundRange');
         if (ofRange) ofRange.textContent = `（${startLabel} 起）`;
         const ofHint = document.getElementById('otherFundHint');
