@@ -577,14 +577,14 @@
             <div class="d-amount safe" id="dashRemain">¥0</div>
           </div>
           <div class="dash-item">
-            <div class="d-label">累计剩余<span class="d-sub">7月起</span></div>
+            <div class="d-label">累计剩余<span class="d-sub" id="cumStartLabel">—</span></div>
             <div class="d-amount safe" id="dashCumBalance">¥0</div>
           </div>
         </div>
         <div class="dash-hint" id="dashHint"></div>
 
         <div class="card other-fund-card">
-          <div class="other-fund-title">其他款项 · 累计（自 2026年7月 起）</div>
+          <div class="other-fund-title">其他款项 · 累计<span id="otherFundRange"></span></div>
           <div class="other-fund-row">
             <div class="other-fund-item">
               <div class="of-label">累计公积金</div>
@@ -1428,39 +1428,45 @@
           .reduce((s, tx) => s + tx.amount, 0);
       }
 
-      // ================= 累计（自记账起始月 2026-07 起） =================
-      const STATS_START_YM = '2026-07';
-      // 累计范围：起始月 → 当前月（未填的月份沿用最近一次收入）
-      // 外加「已经明确填过收入的未来月份」——比如 7 月底就把 8 月工资填好了，也该算进累计
-      function monthsSinceStart() {
+      // ================= 累计 =================
+      // 起始月 = 最早有数据的月份（填过收入 或 有记账），不写死。补录 6 月后 6 月自动纳入
+      function statsStartYM() {
         const cur = currentYM();
+        const cands = Object.keys(Storage.get('income_by_month', {}));
+        getTransactions().forEach(tx => {
+          const d = new Date(tx.date);
+          if (!isNaN(d.getTime())) cands.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+        });
+        const past = cands.filter(ym => ym <= cur).sort();
+        return past.length ? past[0] : cur;
+      }
+      // 累计只统计「已经到来的月份」：起始月 → 当前月（中间未填的月份沿用最近一次收入）
+      // 提前填好的未来月份一律不计入——那笔工资和公积金还没到账
+      function monthsElapsed() {
+        const cur = currentYM();
+        const start = statsStartYM();
+        if (cur < start) return [];
         const out = [];
-        if (cur >= STATS_START_YM) {
-          let [y, m] = STATS_START_YM.split('-').map(Number);
-          for (let guard = 0; guard < 600; guard++) {
-            const ym = `${y}-${String(m).padStart(2, '0')}`;
-            out.push(ym);
-            if (ym >= cur) break;
-            m++; if (m > 12) { m = 1; y++; }
-          }
+        let [y, m] = start.split('-').map(Number);
+        for (let guard = 0; guard < 600; guard++) {
+          const ym = `${y}-${String(m).padStart(2, '0')}`;
+          out.push(ym);
+          if (ym >= cur) break;
+          m++; if (m > 12) { m = 1; y++; }
         }
-        Object.keys(Storage.get('income_by_month', {}))
-          .filter(ym => ym > cur && ym >= STATS_START_YM)
-          .sort()
-          .forEach(ym => out.push(ym));
         return out;
       }
-      // 累计到手剩余 = Σ(该月到手 + 该月记账收入 − 该月全部支出)；同时累计公积金、医保
+      // 累计剩余 = 初始已存款 + Σ(该月到手 + 该月记账收入 − 该月全部支出)；同时累计公积金、医保
       function getCumulative() {
-        const c = { income: 0, spent: 0, balance: 0, fund: 0, medical: 0 };
-        monthsSinceStart().forEach(ym => {
+        const c = { initial: getSavingsInitial(), income: 0, spent: 0, balance: 0, fund: 0, medical: 0 };
+        monthsElapsed().forEach(ym => {
           const inc = getIncomeForMonth(ym);
           c.income += incomeVal(inc, INCOME_ID.afterTax) + getMonthBkIncome(ym);
           c.spent += getMonthSpent(ym);
           c.fund += incomeVal(inc, INCOME_ID.fund);
           c.medical += incomeVal(inc, INCOME_ID.medical);
         });
-        c.balance = c.income - c.spent;
+        c.balance = c.initial + c.income - c.spent;
         return c;
       }
 
@@ -1495,25 +1501,33 @@
         dashRemain.className = `d-amount ${remainRatio >= 1 ? 'danger' : (remainRatio >= 0.8 ? 'warn' : 'safe')}`;
 
         const cum = getCumulative();
+        const cumMonths = monthsElapsed();
+        const startLabel = statsStartYM().replace('-', '.');
         const dashCum = document.getElementById('dashCumBalance');
         if (dashCum) {
           dashCum.textContent = `${cum.balance < 0 ? '-' : ''}¥${fmtAmount(cum.balance)}`;
           dashCum.className = `d-amount ${cum.balance >= 0 ? 'safe' : 'danger'}`;
         }
+        const cumStartLabel = document.getElementById('cumStartLabel');
+        if (cumStartLabel) cumStartLabel.textContent = `${startLabel}起`;
         const cumFund = document.getElementById('cumFund');
         if (cumFund) cumFund.textContent = `¥${fmtAmount(cum.fund)}`;
         const cumMedical = document.getElementById('cumMedical');
         if (cumMedical) cumMedical.textContent = `¥${fmtAmount(cum.medical)}`;
+        const ofRange = document.getElementById('otherFundRange');
+        if (ofRange) ofRange.textContent = `（${startLabel} 起）`;
         const ofHint = document.getElementById('otherFundHint');
-        if (ofHint) ofHint.textContent = `已累计 ${monthsSinceStart().length} 个月。公积金、医保不算进结余（不是能直接花的钱），在「我的财务」按月填写。`;
+        if (ofHint) ofHint.textContent = `已累计 ${cumMonths.length} 个月。起始月自动取最早有数据的月份，补录更早的月份会自动纳入；提前填的未来月不计入（钱还没到）。公积金、医保不算进结余，不是能直接花的钱。`;
 
         const dashHint = document.getElementById('dashHint');
         if (dashHint) {
+          const nMonths = cumMonths.length;
           const l1 = `可支配 = 到手 ¥${fmtAmount(afterTax)} + 记账收入 ¥${fmtAmount(bkIncome)} − 攒钱计划 ¥${fmtAmount(planSave)}`;
           const l2 = irregular > 0
             ? `本月非常规支出 ¥${fmtAmount(irregular)}（看病/大件等），不计入日常已花与剩余，但计入本月结余`
             : `记账时勾选「非常规支出」的项（看病/大件等）不计入日常已花与剩余`;
-          dashHint.innerHTML = `${l1}<br>${l2}`;  // 内容全为固定文案 + 数字，无用户输入
+          const l3 = `累计剩余（${startLabel} 起，共 ${nMonths} 个月）= 初始已存款 ¥${fmtAmount(cum.initial)} + 到手+记账收入 ¥${fmtAmount(cum.income)} − 全部支出 ¥${fmtAmount(cum.spent)}`;
+          dashHint.innerHTML = `${l1}<br>${l2}<br>${l3}`;  // 内容全为固定文案 + 数字，无用户输入
         }
 
         // 本季度各类支出（按选中月份所在季度）
