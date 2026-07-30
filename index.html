@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="有效花钱" />
   <meta name="theme-color" content="#12B886" />
+  <link rel="manifest" href="./manifest.json" />
   <title>有效花钱</title>
   <style>
     :root {
@@ -126,6 +127,7 @@
     .overview-card .overview-balance.positive { color: var(--color-income); }
     .overview-card .overview-balance.negative { color: var(--color-expense); }
 
+    .overview-formula { font-size: 11px; color: var(--color-text-secondary); margin: -10px 0 14px; line-height: 1.6; font-variant-numeric: tabular-nums; }
     .overview-row { display: flex; justify-content: center; gap: 32px; margin-bottom: 16px; }
     .overview-item { text-align: center; }
     .overview-item .item-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 2px; }
@@ -272,6 +274,13 @@
     .config-input { width: 120px; padding: 8px 10px; border: 1px solid #E5E5EA; border-radius: var(--radius-xs); font-size: 15px; font-family: var(--font-mono); text-align: right; outline: none; color: var(--color-text); }
     .config-input:focus { border-color: var(--color-primary); }
     .config-input::placeholder { color: var(--color-text-light); }
+    .income-month-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; background: var(--color-card); border-radius: var(--radius-sm); box-shadow: var(--shadow-card); margin-bottom: 10px; font-size: 14px; color: var(--color-text); }
+    .income-month-input { border: 1px solid #E5E5EA; border-radius: 8px; padding: 7px 10px; font-size: 14px; font-family: var(--font-mono); color: var(--color-text); outline: none; background: #fff; }
+    .income-month-input:focus { border-color: var(--color-primary); }
+    .income-hint { font-size: 11px; color: var(--color-text-secondary); margin-top: 8px; padding: 0 4px; line-height: 1.5; }
+    .income-month-badge { font-size: 11px; padding: 3px 8px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
+    .income-month-badge.own { background: #E6F7EC; color: #2F9E44; }
+    .income-month-badge.inherit { background: #FFF4E6; color: #E8590C; }
     .config-add-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; margin-top: 8px; border: 1px dashed #D1D5DB; border-radius: var(--radius-card); background: transparent; color: var(--color-text-secondary); font-size: 14px; cursor: pointer; transition: all 0.15s ease; width: 100%; }
     .config-add-btn:active { background: #F3F4F6; }
     .config-add-btn svg { width: 16px; height: 16px; }
@@ -310,7 +319,24 @@
     .modal-delete-btn { flex: 1; padding: 14px; border: 1px solid var(--color-expense); border-radius: var(--radius-sm); background: #FFF; color: var(--color-expense); font-size: 17px; font-weight: 500; cursor: pointer; }
     .modal-delete-btn:active { background: #FFF5F5; }
 
-    .dash-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .dash-row { display: flex; gap: 8px; margin-bottom: 6px; }
+    .dash-row.cols4 { gap: 6px; }
+    .dash-row.cols4 .dash-item { padding: 12px 4px; min-width: 0; }
+    .dash-row.cols4 .d-amount { font-size: 16px; letter-spacing: -0.4px; }
+    .dash-item .d-label .d-sub { display: block; font-size: 9px; opacity: 0.75; margin-top: 1px; }
+    .dash-hint { font-size: 11px; color: var(--color-text-secondary); text-align: center; margin-bottom: 16px; line-height: 1.6; font-variant-numeric: tabular-nums; }
+    .other-fund-card { margin-bottom: 16px; }
+    .other-fund-title { font-size: 13px; font-weight: 600; color: var(--color-text); margin-bottom: 12px; }
+    .other-fund-row { display: flex; gap: 8px; }
+    .other-fund-item { flex: 1; text-align: center; }
+    .other-fund-item .of-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px; }
+    .other-fund-item .of-amount { font-family: var(--font-mono); font-size: 20px; font-weight: 700; color: #7950F2; font-variant-numeric: tabular-nums; }
+    .other-fund-hint { font-size: 11px; color: var(--color-text-secondary); margin-top: 10px; line-height: 1.5; }
+
+    .modal-irregular-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 14px; margin-bottom: 16px; background: #FFF8F0; border: 1px solid #FFE3C7; border-radius: var(--radius-sm); }
+    .modal-irregular-row .mi-title { font-size: 14px; font-weight: 600; color: var(--color-text); }
+    .modal-irregular-row .mi-desc { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; line-height: 1.4; }
+    .tx-tag-irregular { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 4px; background: #FFEDD5; color: #EA580C; margin-left: 6px; vertical-align: 1px; }
     .dash-item { flex: 1; background: var(--color-card); border-radius: var(--radius-sm); padding: 14px 10px; text-align: center; box-shadow: var(--shadow-card); }
     .dash-item .d-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px; }
     .dash-item .d-amount { font-family: var(--font-mono); font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -518,6 +544,7 @@
         <div class="card overview-card" id="overviewCard">
           <div class="overview-label">本月结余</div>
           <div class="overview-balance positive" id="overviewBalance">¥0.00</div>
+          <div class="overview-formula" id="overviewFormula">到手 + 记账收入 − 支出</div>
           <div class="overview-row">
             <div class="overview-item">
               <div class="item-label">收入</div>
@@ -534,19 +561,39 @@
           <div class="progress-bar-label" id="progressLabel">暂无数据</div>
         </div>
 
-        <div class="dash-row" id="dashRow">
+        <div class="dash-row cols4" id="dashRow">
           <div class="dash-item">
             <div class="d-label">可支配·扣存钱</div>
             <div class="d-amount safe" id="dashDisposable">¥0</div>
           </div>
           <div class="dash-item">
-            <div class="d-label">已花</div>
+            <div class="d-label">日常已花</div>
             <div class="d-amount warn" id="dashSpent">¥0</div>
           </div>
           <div class="dash-item">
-            <div class="d-label">剩余</div>
+            <div class="d-label">剩余<span class="d-sub">不含非常规</span></div>
             <div class="d-amount safe" id="dashRemain">¥0</div>
           </div>
+          <div class="dash-item">
+            <div class="d-label">累计剩余<span class="d-sub">7月起</span></div>
+            <div class="d-amount safe" id="dashCumBalance">¥0</div>
+          </div>
+        </div>
+        <div class="dash-hint" id="dashHint"></div>
+
+        <div class="card other-fund-card">
+          <div class="other-fund-title">其他款项 · 累计（自 2026年7月 起）</div>
+          <div class="other-fund-row">
+            <div class="other-fund-item">
+              <div class="of-label">累计公积金</div>
+              <div class="of-amount" id="cumFund">¥0</div>
+            </div>
+            <div class="other-fund-item">
+              <div class="of-label">累计医保</div>
+              <div class="of-amount" id="cumMedical">¥0</div>
+            </div>
+          </div>
+          <div class="other-fund-hint" id="otherFundHint"></div>
         </div>
 
         <div class="card dash-cat-card" id="dashCatCard">
@@ -574,13 +621,13 @@
                 <input type="number" class="s-input" id="savingsTargetMonths" placeholder="0" inputmode="decimal" />
               </div>
               <div class="savings-field">
-                <div class="s-label">已存</div>
-                <input type="number" class="s-input" id="savingsSavedAmount" placeholder="0" inputmode="decimal" />
+                <div class="s-label">初始已存款</div>
+                <input type="number" class="s-input" id="savingsInitial" placeholder="0" inputmode="decimal" />
               </div>
             </div>
             <div class="savings-progress">
               <div class="savings-progress-header">
-                <span>进度</span>
+                <span id="savingsSavedLabel">已存 ¥0</span>
                 <span style="font-family:var(--font-mono);" id="savingsProgressText">0%</span>
               </div>
               <div class="savings-progress-bar">
@@ -738,8 +785,16 @@
         </div>
 
         <div class="config-section">
-          <div class="config-section-title">月收入</div>
+          <div class="config-section-title">每月收入</div>
+          <div class="income-month-row">
+            <span>填写月份</span>
+            <span style="display:flex; align-items:center; gap:8px;">
+              <span class="income-month-badge inherit" id="incomeMonthBadge">--</span>
+              <input type="month" id="incomeMonth" class="income-month-input" />
+            </span>
+          </div>
           <div class="config-list" id="incomeList"></div>
+          <div class="income-hint">每月工资可能不同，切换上方月份可分别填写该月的到手月收入、公积金、房补等；未单独填写的月份自动沿用最近一次的收入。<br>首页「本月结余」= 该月到手月收入 − 该月支出 + 该月记账收入。</div>
         </div>
 
         <div class="config-section">
@@ -870,6 +925,14 @@
             <option value="other">其他</option>
           </select>
           <input type="date" class="modal-form-input" id="modalDate" style="flex:1;" />
+        </div>
+
+        <div class="modal-irregular-row" id="modalIrregularRow">
+          <div>
+            <div class="mi-title">非常规支出</div>
+            <div class="mi-desc">看病、家电大件等必要开销，不计入「日常已花 / 剩余」</div>
+          </div>
+          <label class="switch"><input type="checkbox" id="modalIrregular"><span class="switch-slider"></span></label>
         </div>
 
         <div class="modal-btn-row">
@@ -1074,7 +1137,7 @@
             <div class="tx-item">
               ${iconHTML}
               <div class="tx-info">
-                <div class="tx-name">${name}</div>
+                <div class="tx-name">${name}${tx.irregular ? '<span class="tx-tag-irregular">非常规</span>' : ''}</div>
                 ${note || sourceLabel ? `<div class="tx-note">${[sourceLabel, note].filter(Boolean).join(' · ')}</div>` : ''}
               </div>
               <div class="tx-amount ${amountClass}">${prefix}¥${fmtAmount(tx.amount)}</div>
@@ -1112,16 +1175,22 @@
         };
       }
 
+      // 本月结余 = 我的财务·该月到手月收入 − 该月记账支出 + 该月记账收入
       function renderOverview() {
-        const { start, end, m } = ymToRange(getHomeMonth());
-        const monthTxs = getTransactions().filter(tx => { const d = new Date(tx.date); return d >= start && d <= end; });
-        const totalIncome = monthTxs.filter(tx => tx.type === 'income').reduce((s, tx) => s + tx.amount, 0);
-        const totalExpense = monthTxs.filter(tx => tx.type === 'expense').reduce((s, tx) => s + tx.amount, 0);
+        const ym = getHomeMonth();
+        const { m } = ymToRange(ym);
+        const bkIncome = getMonthBkIncome(ym);
+        const totalExpense = getMonthSpent(ym);
+        const salary = getAfterTaxIncome(ym);
+        const totalIncome = salary + bkIncome;
         const balance = totalIncome - totalExpense;
 
         const balEl = document.getElementById('overviewBalance');
         balEl.className = `overview-balance ${balance >= 0 ? 'positive' : 'negative'}`;
-        balEl.textContent = `${balance >= 0 ? '' : '-'}¥${fmtAmount(balance)}`;
+        balEl.textContent = `${balance >= 0 ? '' : '-'}¥${fmtAmount(Math.abs(balance))}`;
+
+        const fEl = document.getElementById('overviewFormula');
+        if (fEl) fEl.textContent = `到手 ¥${fmtAmount(salary)} + 记账收入 ¥${fmtAmount(bkIncome)} − 支出 ¥${fmtAmount(totalExpense)}`;
 
         document.getElementById('overviewIncome').textContent = `¥${fmtAmount(totalIncome)}`;
         document.getElementById('overviewExpense').textContent = `¥${fmtAmount(totalExpense)}`;
@@ -1300,16 +1369,24 @@
         return {
           targetAmount: Storage.get('savings_target_amount', 50000),
           targetMonths: Storage.get('savings_target_months', 12),
-          savedAmount: Storage.get('savings_saved_amount', 8000),
           startMonth: Storage.get('savings_start_month', ''),
         };
       }
       function saveSavingsConfig(cfg) {
         Storage.set('savings_target_amount', cfg.targetAmount);
         Storage.set('savings_target_months', cfg.targetMonths);
-        Storage.set('savings_saved_amount', cfg.savedAmount);
         Storage.set('savings_start_month', cfg.startMonth);
       }
+      // 初始已存款（不从0开始）；兼容旧的 savings_saved_amount
+      function getSavingsInitial() {
+        let v = Storage.get('savings_initial', null);
+        if (v === null) v = Storage.get('savings_saved_amount', 0);
+        return parseFloat(v) || 0;
+      }
+      function setSavingsInitial(v) { Storage.set('savings_initial', parseFloat(v) || 0); }
+      function getDepositsSum() { return Object.values(Storage.get('savings_deposits', {})).reduce((s, v) => s + v, 0); }
+      // 当前已存 = 初始已存款 + 分月实际存入合计
+      function getCurrentSaved() { return getSavingsInitial() + getDepositsSum(); }
       // 每月计划存钱额 = 目标金额 / 期限
       function getPlannedMonthlySaving() {
         const cfg = getSavingsConfig();
@@ -1318,29 +1395,73 @@
         if (amt <= 0 || months <= 0) return 0;
         return Math.round(amt / months);
       }
-      // 本月可支配（已扣存钱）= 真实可支配 − 每月计划存钱
-      function getAvailable() {
-        return Math.max(calcDisposable(getFinanceConfig()) - getPlannedMonthlySaving(), 0);
+      // 某月可支配（已扣存钱）= 该月到手月收入 + 该月记账收入 − 每月计划攒钱；默认当前真实月
+      function getAvailable(ym) {
+        const m = ym || currentYM();
+        return Math.max(getAfterTaxIncome(m) + getMonthBkIncome(m) - getPlannedMonthlySaving(), 0);
+      }
+      // 某月记账合计。irregular=true 的支出为「非常规支出」（看病、家电等必要大件）：
+      // 计入总支出与结余（现金流真实），但不计入「日常已花 / 剩余」的自律考核
+      function getMonthSpent(ym) { return sumMonthTx(ym, 'expense'); }
+      function getMonthRegularSpent(ym) { return sumMonthTx(ym, 'expense', tx => !tx.irregular); }
+      function getMonthIrregularSpent(ym) { return sumMonthTx(ym, 'expense', tx => !!tx.irregular); }
+      function getMonthBkIncome(ym) { return sumMonthTx(ym, 'income'); }
+      function sumMonthTx(ym, type, extra) {
+        const { start, end } = ymToRange(ym || currentYM());
+        return getTransactions()
+          .filter(tx => {
+            const d = new Date(tx.date);
+            return tx.type === type && d >= start && d <= end && (!extra || extra(tx));
+          })
+          .reduce((s, tx) => s + tx.amount, 0);
+      }
+
+      // ================= 累计（自记账起始月 2026-07 起） =================
+      const STATS_START_YM = '2026-07';
+      function monthsSinceStart() {
+        const end = currentYM();
+        if (end < STATS_START_YM) return [];
+        const out = [];
+        let [y, m] = STATS_START_YM.split('-').map(Number);
+        for (let guard = 0; guard < 600; guard++) {
+          const ym = `${y}-${String(m).padStart(2, '0')}`;
+          out.push(ym);
+          if (ym >= end) break;
+          m++; if (m > 12) { m = 1; y++; }
+        }
+        return out;
+      }
+      // 累计到手剩余 = Σ(该月到手 + 该月记账收入 − 该月全部支出)；同时累计公积金、医保
+      function getCumulative() {
+        const c = { income: 0, spent: 0, balance: 0, fund: 0, medical: 0 };
+        monthsSinceStart().forEach(ym => {
+          const inc = getIncomeForMonth(ym);
+          c.income += incomeVal(inc, INCOME_ID.afterTax) + getMonthBkIncome(ym);
+          c.spent += getMonthSpent(ym);
+          c.fund += incomeVal(inc, INCOME_ID.fund);
+          c.medical += incomeVal(inc, INCOME_ID.medical);
+        });
+        c.balance = c.income - c.spent;
+        return c;
       }
 
       // ================= 首页驾驶舱 =================
       function getMonthStart() { const now = new Date(); return new Date(now.getFullYear(), now.getMonth(), 1); }
       function getQuarterStart() { const now = new Date(); return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1); }
 
-      // 自由支配花销 = 除"居住"(房租已在固定支出里)外的所有分类，新增分类自动纳入
-      const FREE_CATS = EXPENSE_CATEGORIES.map(c => c.key).filter(k => k !== 'housing');
-
       function renderDashboard() {
-        const realDisposable = calcDisposable(getFinanceConfig());
-        const plannedSaving = getPlannedMonthlySaving();
-        const available = Math.max(realDisposable - plannedSaving, 0);
-
-        // 按首页选中的月份显示
-        const { start, end, y, m } = ymToRange(getHomeMonth());
-        const monthSpent = getTransactions()
-          .filter(tx => { const d = new Date(tx.date); return tx.type === 'expense' && FREE_CATS.includes(tx.category) && d >= start && d <= end; })
-          .reduce((s, tx) => s + tx.amount, 0);
-        const remaining = Math.max(available - monthSpent, 0);
+        // 按首页选中的月份显示，可支配用该月的收入
+        const ym = getHomeMonth();
+        const { y, m } = ymToRange(ym);
+        // 可支配 = 该月到手 + 该月记账收入 − 每月攒钱计划
+        // 日常已花 = 该月记账支出（排除非常规）；剩余 = 可支配 − 日常已花
+        const afterTax = getAfterTaxIncome(ym);
+        const bkIncome = getMonthBkIncome(ym);
+        const planSave = getPlannedMonthlySaving();
+        const available = getAvailable(ym);
+        const monthSpent = getMonthRegularSpent(ym);
+        const irregular = getMonthIrregularSpent(ym);
+        const remaining = available - monthSpent;
 
         const dashDisposable = document.getElementById('dashDisposable');
         dashDisposable.textContent = `¥${fmtAmount(available)}`;
@@ -1350,9 +1471,31 @@
         document.getElementById('dashSpent').className = `d-amount ${monthSpent > available ? 'danger' : 'warn'}`;
 
         const dashRemain = document.getElementById('dashRemain');
-        dashRemain.textContent = `¥${fmtAmount(remaining)}`;
+        dashRemain.textContent = `${remaining < 0 ? '-' : ''}¥${fmtAmount(remaining)}`;
         const remainRatio = available > 0 ? monthSpent / available : 1;
         dashRemain.className = `d-amount ${remainRatio >= 1 ? 'danger' : (remainRatio >= 0.8 ? 'warn' : 'safe')}`;
+
+        const cum = getCumulative();
+        const dashCum = document.getElementById('dashCumBalance');
+        if (dashCum) {
+          dashCum.textContent = `${cum.balance < 0 ? '-' : ''}¥${fmtAmount(cum.balance)}`;
+          dashCum.className = `d-amount ${cum.balance >= 0 ? 'safe' : 'danger'}`;
+        }
+        const cumFund = document.getElementById('cumFund');
+        if (cumFund) cumFund.textContent = `¥${fmtAmount(cum.fund)}`;
+        const cumMedical = document.getElementById('cumMedical');
+        if (cumMedical) cumMedical.textContent = `¥${fmtAmount(cum.medical)}`;
+        const ofHint = document.getElementById('otherFundHint');
+        if (ofHint) ofHint.textContent = `已累计 ${monthsSinceStart().length} 个月。公积金、医保不算进结余（不是能直接花的钱），在「我的财务」按月填写。`;
+
+        const dashHint = document.getElementById('dashHint');
+        if (dashHint) {
+          const l1 = `可支配 = 到手 ¥${fmtAmount(afterTax)} + 记账收入 ¥${fmtAmount(bkIncome)} − 攒钱计划 ¥${fmtAmount(planSave)}`;
+          const l2 = irregular > 0
+            ? `本月非常规支出 ¥${fmtAmount(irregular)}（看病/大件等），不计入日常已花与剩余，但计入本月结余`
+            : `记账时勾选「非常规支出」的项（看病/大件等）不计入日常已花与剩余`;
+          dashHint.innerHTML = `${l1}<br>${l2}`;  // 内容全为固定文案 + 数字，无用户输入
+        }
 
         // 本季度各类支出（按选中月份所在季度）
         const q = Math.floor((m - 1) / 3);
@@ -1376,13 +1519,9 @@
 
         // 供"该不该买"调用：始终按当前真实月份，不受首页选月影响
         window.__getDiscretionaryRemaining = function () {
-          const now = new Date();
-          const cs = new Date(now.getFullYear(), now.getMonth(), 1);
-          const spentNow = getTransactions()
-            .filter(tx => { const d = new Date(tx.date); return tx.type === 'expense' && FREE_CATS.includes(tx.category) && d >= cs && d <= now; })
-            .reduce((s, tx) => s + tx.amount, 0);
+          const spentNow = getMonthRegularSpent(currentYM());
           const avail = getAvailable();
-          return { discretionary: avail, monthSpent: spentNow, remaining: Math.max(avail - spentNow, 0), ratio: avail > 0 ? spentNow / avail : 1, savingGoal: getPlannedMonthlySaving() };
+          return { discretionary: avail, monthSpent: spentNow, remaining: avail - spentNow, ratio: avail > 0 ? spentNow / avail : 1, savingGoal: getPlannedMonthlySaving() };
         };
       }
 
@@ -1395,18 +1534,21 @@
         }
         const targetAmount = parseFloat(cfg.targetAmount) || 0;
         const targetMonths = parseInt(cfg.targetMonths) || 0;
-        const savedAmount = parseFloat(cfg.savedAmount) || 0;
+        const initial = getSavingsInitial();
+        const currentSaved = getCurrentSaved();
 
         const targetInput = document.getElementById('savingsTargetAmount');
         const monthsInput = document.getElementById('savingsTargetMonths');
-        const savedInput = document.getElementById('savingsSavedAmount');
+        const initInput = document.getElementById('savingsInitial');
         if (document.activeElement !== targetInput) targetInput.value = targetAmount || '';
         if (document.activeElement !== monthsInput) monthsInput.value = targetMonths || '';
-        if (document.activeElement !== savedInput) savedInput.value = savedAmount || '';
+        if (initInput && document.activeElement !== initInput) initInput.value = initial || '';
 
-        const progressPct = targetAmount > 0 ? Math.min((savedAmount / targetAmount) * 100, 100) : 0;
+        const progressPct = targetAmount > 0 ? Math.min((currentSaved / targetAmount) * 100, 100) : 0;
         document.getElementById('savingsProgressFill').style.width = `${progressPct}%`;
         document.getElementById('savingsProgressText').textContent = `${Math.round(progressPct)}%`;
+        const savedLabel = document.getElementById('savingsSavedLabel');
+        if (savedLabel) savedLabel.textContent = `已存 ¥${fmtAmount(currentSaved)}`;
 
         const forecastEl = document.getElementById('savingsForecast');
         const statusEl = document.getElementById('savingsStatus');
@@ -1420,26 +1562,24 @@
 
         const [sy, sm] = cfg.startMonth.split('-').map(Number);
         const now = new Date();
-        const elapsedMonths = (now.getFullYear() - sy) * 12 + (now.getMonth() + 1) - sm;
+        const elapsedMonths = Math.max((now.getFullYear() - sy) * 12 + (now.getMonth() + 1) - sm, 0);
         const monthsLeft = Math.max(targetMonths - elapsedMonths, 0);
-        const remaining = Math.max(targetAmount - savedAmount, 0);
-        const neededPerMonth = monthsLeft > 0 ? remaining / monthsLeft : remaining;
-        const savedPerMonth = elapsedMonths > 0 ? savedAmount / elapsedMonths : 0;
+        const remaining = Math.max(targetAmount - currentSaved, 0);
         const planPerMonth = getPlannedMonthlySaving();
+        const expectedByNow = initial + planPerMonth * elapsedMonths; // 按计划到现在应存到的数
 
-        if (targetAmount <= savedAmount) {
+        if (currentSaved >= targetAmount) {
           statusEl.textContent = '已达标';
           statusEl.className = 'savings-status on-track';
-          forecastEl.innerHTML = `🎉 恭喜！已存 ¥${fmtAmount(savedAmount)}，达成存钱目标 ¥${fmtAmount(targetAmount)}`;
-        } else if (savedPerMonth >= neededPerMonth) {
+          forecastEl.innerHTML = `🎉 恭喜！已存 ¥${fmtAmount(currentSaved)}，达成存钱目标 ¥${fmtAmount(targetAmount)}`;
+        } else if (currentSaved >= expectedByNow) {
           statusEl.textContent = '节奏良好';
           statusEl.className = 'savings-status on-track';
-          forecastEl.innerHTML = `每月计划存 ¥${fmtAmount(planPerMonth)}，已从可支配中预留<br>按此节奏，${monthsLeft > 0 ? monthsLeft + '个月' : '即将'}达标 ✅`;
+          forecastEl.innerHTML = `每月计划存 ¥${fmtAmount(planPerMonth)}，已从可支配中预留<br>已存 ¥${fmtAmount(currentSaved)}，${monthsLeft > 0 ? '还剩 ' + monthsLeft + ' 个月达标' : '即将达标'} ✅`;
         } else {
-          const gap = neededPerMonth - savedPerMonth;
           statusEl.textContent = '需加速';
           statusEl.className = 'savings-status behind';
-          forecastEl.innerHTML = `每月需存 ¥${fmtAmount(neededPerMonth)}（已从可支配中预留 ¥${fmtAmount(planPerMonth)}）<br>还差 ¥${fmtAmount(remaining)}，剩 ${monthsLeft} 个月 ⚠️`;
+          forecastEl.innerHTML = `已存 ¥${fmtAmount(currentSaved)}，比计划落后 ¥${fmtAmount(expectedByNow - currentSaved)}<br>还差 ¥${fmtAmount(remaining)}，剩 ${monthsLeft} 个月 ⚠️`;
         }
 
         const mEl = document.getElementById('savingsMonthly');
@@ -1451,12 +1591,6 @@
         const d = getDeposits();
         if (amount > 0) d[ym] = amount; else delete d[ym];
         Storage.set('savings_deposits', d);
-        // 有实际记录则用合计同步"已存"
-        if (Object.keys(d).length > 0) {
-          const cfg = getSavingsConfig();
-          cfg.savedAmount = Object.values(d).reduce((s, v) => s + v, 0);
-          saveSavingsConfig(cfg);
-        }
         renderSavingsGoal();
         renderSavingsMonthly();
       }
@@ -1509,7 +1643,8 @@
         const gapHTML = gap >= 0
           ? `<span style="color:var(--color-primary)">超 ¥${fmtAmount(gap)}</span>`
           : `<span style="color:var(--color-expense)">欠 ¥${fmtAmount(-gap)}</span>`;
-        el.innerHTML = `<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.7;">每月计划存 ¥${fmtAmount(per)} × ${months} 个月 → 目标 ¥${fmtAmount(target)}<br>已实际存入 ¥${fmtAmount(totalActual)} / 至今应存 ¥${fmtAmount(planToDate)} · ${gapHTML}</div>${rows}`;
+        const initial = getSavingsInitial();
+        el.innerHTML = `<div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.7;">初始已存 ¥${fmtAmount(initial)} + 分月存入 ¥${fmtAmount(totalActual)} = 当前 ¥${fmtAmount(initial + totalActual)}<br>至今应存 ¥${fmtAmount(planToDate)} · ${gapHTML}</div>${rows}`;
       }
 
       document.getElementById('savingsTab')?.addEventListener('click', (e) => {
@@ -1537,10 +1672,9 @@
         cfg.targetMonths = parseInt(document.getElementById('savingsTargetMonths').value) || 0;
         saveSavingsConfig(cfg); renderSavingsGoal(); renderDashboard();
       });
-      document.getElementById('savingsSavedAmount')?.addEventListener('input', () => {
-        const cfg = getSavingsConfig();
-        cfg.savedAmount = parseFloat(document.getElementById('savingsSavedAmount').value) || 0;
-        saveSavingsConfig(cfg); renderSavingsGoal();
+      document.getElementById('savingsInitial')?.addEventListener('input', () => {
+        setSavingsInitial(document.getElementById('savingsInitial').value);
+        renderSavingsGoal();
       });
 
       // ================= 该不该买 =================
@@ -2052,15 +2186,29 @@
       }
 
       // ================= 我的财务 =================
+      // 收入项固定 5 项：id 永不变（旧数据靠 id 对齐），label 以代码为准，value 按月单独存储
+      const INCOME_ITEM_DEFS = [
+        { id: 1, label: '税前工资',          def: 18000 },
+        { id: 2, label: '到手月收入',        def: 13500 },
+        { id: 3, label: '公积金(个人+公司)', def: 4320 },
+        { id: 4, label: '房补',              def: 1500 },
+        { id: 5, label: '其他补贴',          def: 800 },
+        { id: 6, label: '医保(个人+公司)',   def: 0 },
+      ];
+      const INCOME_ID = { pretax: 1, afterTax: 2, fund: 3, housing: 4, other: 5, medical: 6 };
       function getDefaultIncomeConfig() {
-        return [
-          { id: 1, label: '税前工资', value: 18000 },
-          { id: 2, label: '税后到手', value: 13500 },
-          { id: 3, label: '公积金(个人+公司)', value: 4320 },
-          { id: 4, label: '房补', value: 1500 },
-          { id: 5, label: '其他补贴', value: 800 },
-        ];
+        return INCOME_ITEM_DEFS.map(d => ({ id: d.id, label: d.label, value: d.def }));
       }
+      // 把任意历史结构补齐成 5 项、并用最新 label（值按 id 保留，不丢老数据）
+      function normalizeIncome(list) {
+        const src = Array.isArray(list) ? list : [];
+        return INCOME_ITEM_DEFS.map(d => {
+          const hit = src.find(i => i && Number(i.id) === d.id);
+          const v = hit ? parseFloat(hit.value) : NaN;
+          return { id: d.id, label: d.label, value: isNaN(v) ? 0 : v };
+        });
+      }
+      function incomeVal(income, id) { return (income.find(i => i.id === id) || {}).value || 0; }
       function getDefaultFixedExpenses() {
         return [
           { id: 1, label: '房租', value: 2500 },
@@ -2068,24 +2216,43 @@
           { id: 3, label: '通勤', value: 300 },
         ];
       }
-      function getFinanceConfig() {
-        return {
-          income: Storage.get('finance_income', getDefaultIncomeConfig()),
-          fixedExpenses: Storage.get('finance_fixed_expenses', getDefaultFixedExpenses()),
-          nextFixedId: Storage.get('finance_next_fixed_id', 4),
-        };
+      // 固定支出：全局（每月一致）
+      function getFixedExpenses() { return Storage.get('finance_fixed_expenses', getDefaultFixedExpenses()); }
+      function saveFixedExpenses(list) { Storage.set('finance_fixed_expenses', list); }
+      function getFixedNextId() { return Storage.get('finance_next_fixed_id', 4); }
+      function setFixedNextId(v) { Storage.set('finance_next_fixed_id', v); }
+      function getTotalFixed() { return getFixedExpenses().reduce((s, it) => s + (it.value || 0), 0); }
+
+      // 每月收入：按月存储，未填的月份沿用最近一次
+      // 返回该月收入来源：{ ym: 实际取自哪个月, own: 是否本月单独填过 }
+      function resolveIncomeSource(ym) {
+        const byMonth = Storage.get('income_by_month', {});
+        if (byMonth[ym]) return { ym, own: true, raw: byMonth[ym] };
+        const prior = Object.keys(byMonth).filter(k => k <= ym).sort();
+        if (prior.length) { const p = prior[prior.length - 1]; return { ym: p, own: false, raw: byMonth[p] }; }
+        const all = Object.keys(byMonth).sort();
+        if (all.length) return { ym: all[0], own: false, raw: byMonth[all[0]] };
+        return { ym: null, own: false, raw: Storage.get('finance_income', getDefaultIncomeConfig()) };
       }
-      function saveFinanceConfig(cfg) {
-        Storage.set('finance_income', cfg.income);
-        Storage.set('finance_fixed_expenses', cfg.fixedExpenses);
-        Storage.set('finance_next_fixed_id', cfg.nextFixedId);
+      function getIncomeForMonth(ym) {
+        return normalizeIncome(resolveIncomeSource(ym).raw);
       }
-      function calcDisposable(cfg) {
-        const afterTax = (cfg.income.find(i => i.id === 2) || {}).value || 0;
-        const housing = (cfg.income.find(i => i.id === 4) || {}).value || 0;
-        const other = (cfg.income.find(i => i.id === 5) || {}).value || 0;
-        const totalFixed = cfg.fixedExpenses.reduce((sum, item) => sum + (item.value || 0), 0);
-        return afterTax + housing + other - totalFixed;
+      function setIncomeForMonth(ym, income) {
+        const byMonth = Storage.get('income_by_month', {});
+        byMonth[ym] = income;
+        Storage.set('income_by_month', byMonth);
+      }
+      function getFinanceEditMonth() { return Storage.get('finance_edit_month', currentYM()); }
+
+      // 某月真实可支配 = 该月(到手+房补+其他补贴) − 固定支出
+      function calcDisposable(ym) {
+        const income = getIncomeForMonth(ym || currentYM());
+        return incomeVal(income, INCOME_ID.afterTax) + incomeVal(income, INCOME_ID.housing)
+             + incomeVal(income, INCOME_ID.other) - getTotalFixed();
+      }
+      // 某月到手月收入（首页结余用）
+      function getAfterTaxIncome(ym) {
+        return incomeVal(getIncomeForMonth(ym || currentYM()), INCOME_ID.afterTax);
       }
       function escAttr(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
       function buildConfigItemHTML(item, isIncome) {
@@ -2106,62 +2273,86 @@
           </div>
         `;
       }
-      function updateDisposableUI(cfg) {
-        const disposable = calcDisposable(cfg);
-        const afterTax = (cfg.income.find(i => i.id === 2) || {}).value || 0;
-        const housing = (cfg.income.find(i => i.id === 4) || {}).value || 0;
-        const other = (cfg.income.find(i => i.id === 5) || {}).value || 0;
-        const totalFixed = cfg.fixedExpenses.reduce((sum, item) => sum + (item.value || 0), 0);
-        document.getElementById('disposableAmount').textContent = `¥${fmtAmount(disposable)}`;
+      function updateDisposableUI(ym) {
+        const income = getIncomeForMonth(ym);
+        const afterTax = incomeVal(income, INCOME_ID.afterTax);
+        const housing = incomeVal(income, INCOME_ID.housing);
+        const other = incomeVal(income, INCOME_ID.other);
+        const totalFixed = getTotalFixed();
+        document.getElementById('disposableAmount').textContent = `¥${fmtAmount(calcDisposable(ym))}`;
         document.getElementById('disposableFormula').textContent = `到手 ¥${fmtAmount(afterTax)} + 补贴 ¥${fmtAmount(housing + other)} − 固定支出 ¥${fmtAmount(totalFixed)}`;
       }
       function renderFinanceConfig() {
-        const cfg = getFinanceConfig();
-        document.getElementById('incomeList').innerHTML = cfg.income.map(item => buildConfigItemHTML(item, true)).join('');
-        document.getElementById('fixedExpenseList').innerHTML = cfg.fixedExpenses.map(item => buildConfigItemHTML(item, false)).join('');
-        updateDisposableUI(cfg);
+        const ym = getFinanceEditMonth();
+        const monthInput = document.getElementById('incomeMonth');
+        if (monthInput && document.activeElement !== monthInput) monthInput.value = ym;
+        document.getElementById('incomeList').innerHTML = getIncomeForMonth(ym).map(item => buildConfigItemHTML(item, true)).join('');
+        document.getElementById('fixedExpenseList').innerHTML = getFixedExpenses().map(item => buildConfigItemHTML(item, false)).join('');
+        updateIncomeBadge(ym);
+        updateDisposableUI(ym);
       }
-      function collectCurrentConfig() {
-        const cfg = getFinanceConfig();
-        cfg.income = Array.from(document.querySelectorAll('#incomeList .config-item')).map(el => ({
+      function updateIncomeBadge(ym) {
+        const badge = document.getElementById('incomeMonthBadge');
+        if (!badge) return;
+        const src = resolveIncomeSource(ym);
+        if (src.own) { badge.className = 'income-month-badge own'; badge.textContent = '本月已填'; }
+        else if (src.ym) { badge.className = 'income-month-badge inherit'; badge.textContent = `沿用 ${Number(src.ym.split('-')[1])}月`; }
+        else { badge.className = 'income-month-badge inherit'; badge.textContent = '待填写'; }
+      }
+      function collectIncome() {
+        const ym = getFinanceEditMonth();
+        const income = Array.from(document.querySelectorAll('#incomeList .config-item')).map(el => ({
           id: parseInt(el.dataset.id, 10),
           label: el.querySelector('.config-label').textContent.trim(),
           value: (() => { const v = parseFloat(el.querySelector('.config-input').value || '0'); return isNaN(v) ? 0 : v; })(),
         }));
-        cfg.fixedExpenses = Array.from(document.querySelectorAll('#fixedExpenseList .config-item')).map(el => {
+        if (income.length) setIncomeForMonth(ym, income);
+        return income;
+      }
+      function collectFixed() {
+        const list = Array.from(document.querySelectorAll('#fixedExpenseList .config-item')).map(el => {
           const labelEl = el.querySelector('.config-label-input') || el.querySelector('.config-label');
           const rawLabel = labelEl ? (labelEl.value !== undefined ? labelEl.value : labelEl.textContent) : '';
           const v = parseFloat(el.querySelector('.config-input').value || '0');
-          return {
-            id: parseInt(el.dataset.id, 10),
-            label: (rawLabel || '').trim() || '未命名',
-            value: isNaN(v) ? 0 : v,
-          };
+          return { id: parseInt(el.dataset.id, 10), label: (rawLabel || '').trim() || '未命名', value: isNaN(v) ? 0 : v };
         });
-        saveFinanceConfig(cfg);
-        return cfg;
+        saveFixedExpenses(list);
+        return list;
       }
       function onFinanceInputChange() {
-        const cfg = collectCurrentConfig();
-        updateDisposableUI(cfg);
+        collectIncome();
+        collectFixed();
+        updateIncomeBadge(getFinanceEditMonth());
+        updateDisposableUI(getFinanceEditMonth());
+        renderOverview();   // 到手月收入变了，首页结余要跟着变
         renderDashboard();
+        renderMonthReport();
       }
       function onDeleteFixedExpense(id) {
-        const cfg = collectCurrentConfig();
-        cfg.fixedExpenses = cfg.fixedExpenses.filter(item => item.id !== id);
-        saveFinanceConfig(cfg);
+        collectIncome();
+        const list = collectFixed().filter(item => item.id !== id);
+        saveFixedExpenses(list);
         renderFinanceConfig();
         renderDashboard();
       }
       function onAddFixedExpense() {
-        const cfg = collectCurrentConfig();
-        const newId = cfg.nextFixedId; cfg.nextFixedId++;
-        cfg.fixedExpenses.push({ id: newId, label: '', value: 0 });
-        saveFinanceConfig(cfg);
+        collectIncome();
+        const list = collectFixed();
+        const newId = getFixedNextId(); setFixedNextId(newId + 1);
+        list.push({ id: newId, label: '', value: 0 });
+        saveFixedExpenses(list);
         renderFinanceConfig();
         const labels = document.querySelectorAll('#fixedExpenseList .config-label-input');
         if (labels.length > 0) labels[labels.length - 1].focus();
       }
+      // 切换收入月份
+      document.getElementById('incomeMonth')?.addEventListener('change', (e) => {
+        collectIncome(); // 先存当前编辑月
+        Storage.set('finance_edit_month', e.target.value || currentYM());
+        renderFinanceConfig();
+        renderOverview();
+        renderDashboard();
+      });
 
       // ================= 资产与会员 =================
       function getDefaultAssets() {
@@ -2278,6 +2469,8 @@
       const modalTypeToggle = document.getElementById('modalTypeToggle');
       const txModalTitle = document.getElementById('txModalTitle');
       const modalDelete = document.getElementById('modalDelete');
+      const modalIrregular = document.getElementById('modalIrregular');
+      const modalIrregularRow = document.getElementById('modalIrregularRow');
 
       let modalState = { type: 'expense', category: 'food' };
       let editingTxId = null;
@@ -2292,6 +2485,7 @@
             modalNote.value = tx.note || '';
             document.getElementById('modalSource').value = tx.source || 'wechat';
             document.getElementById('modalDate').value = (tx.date || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
+            modalIrregular.checked = !!tx.irregular;
             txModalTitle.textContent = '编辑交易';
             modalDelete.style.display = '';
           } else { editingTxId = null; }
@@ -2302,6 +2496,7 @@
           modalNote.value = '';
           document.getElementById('modalSource').value = 'wechat';
           document.getElementById('modalDate').value = new Date().toISOString().slice(0, 10);
+          modalIrregular.checked = false;
           txModalTitle.textContent = '记一笔';
           modalDelete.style.display = 'none';
         }
@@ -2316,6 +2511,10 @@
         modalTypeToggle.querySelectorAll('.modal-type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === modalState.type));
         modalPrefix.className = `modal-amount-prefix ${modalState.type}`;
         modalPrefix.textContent = modalState.type === 'expense' ? '-' : '+';
+        // 「非常规支出」只对支出有意义
+        const isExpense = modalState.type === 'expense';
+        modalIrregularRow.style.display = isExpense ? '' : 'none';
+        if (!isExpense) modalIrregular.checked = false;
         renderCatGrid();
       }
       function renderCatGrid() {
@@ -2347,11 +2546,12 @@
         const dateVal = document.getElementById('modalDate').value;
         const txDate = dateVal ? new Date(dateVal + 'T12:00:00').toISOString() : new Date().toISOString();
         const txs = getTransactions();
+        const irregular = modalState.type === 'expense' && modalIrregular.checked;
         if (editingTxId) {
           const idx = txs.findIndex(t => t.id === editingTxId);
-          if (idx !== -1) txs[idx] = { ...txs[idx], type: modalState.type, category: modalState.category, amount, source, note, date: txDate };
+          if (idx !== -1) txs[idx] = { ...txs[idx], type: modalState.type, category: modalState.category, amount, source, note, date: txDate, irregular };
         } else {
-          txs.push({ id: getNextId(), type: modalState.type, category: modalState.category, amount, source, note, date: txDate });
+          txs.push({ id: getNextId(), type: modalState.type, category: modalState.category, amount, source, note, date: txDate, irregular });
         }
         saveTransactions(txs);
         refreshAll();
