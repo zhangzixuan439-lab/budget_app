@@ -321,12 +321,20 @@
     .modal-delete-btn { flex: 1; padding: 14px; border: 1px solid var(--color-expense); border-radius: var(--radius-sm); background: #FFF; color: var(--color-expense); font-size: 17px; font-weight: 500; cursor: pointer; }
     .modal-delete-btn:active { background: #FFF5F5; }
 
-    .dash-row { display: flex; gap: 8px; margin-bottom: 6px; }
+    .dash-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .dash-hint-btn { display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; padding: 9px; margin-bottom: 16px; border: none; background: transparent; color: var(--color-text-secondary); font-size: 12px; cursor: pointer; border-radius: var(--radius-sm); }
+    .dash-hint-btn:active { background: rgba(0,0,0,0.04); }
+    .dash-hint-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .calc-modal { max-height: 82vh; overflow-y: auto; }
+    .calc-block { padding: 14px 0; border-bottom: 1px solid #F0F0F0; }
+    .calc-block:last-child { border-bottom: none; padding-bottom: 4px; }
+    .calc-name { font-size: 14px; font-weight: 700; color: var(--color-text); margin-bottom: 6px; }
+    .calc-formula { font-family: var(--font-mono); font-size: 12px; color: var(--color-primary); background: var(--color-primary-light); padding: 8px 10px; border-radius: 6px; line-height: 1.7; font-variant-numeric: tabular-nums; word-break: break-word; }
+    .calc-note { font-size: 11px; color: var(--color-text-secondary); line-height: 1.6; margin-top: 6px; }
     .dash-row.cols4 { gap: 6px; }
     .dash-row.cols4 .dash-item { padding: 12px 4px; min-width: 0; }
     .dash-row.cols4 .d-amount { font-size: 16px; letter-spacing: -0.4px; }
     .dash-item .d-label .d-sub { display: block; font-size: 9px; opacity: 0.75; margin-top: 1px; }
-    .dash-hint { font-size: 11px; color: var(--color-text-secondary); text-align: center; margin-bottom: 16px; line-height: 1.6; font-variant-numeric: tabular-nums; }
     .other-fund-card { margin-bottom: 16px; }
     .other-fund-title { font-size: 13px; font-weight: 600; color: var(--color-text); margin-bottom: 12px; }
     .other-fund-row { display: flex; gap: 8px; }
@@ -581,22 +589,10 @@
             <div class="d-amount safe" id="dashCumBalance">¥0</div>
           </div>
         </div>
-        <div class="dash-hint" id="dashHint"></div>
-
-        <div class="card other-fund-card">
-          <div class="other-fund-title">其他款项 · 累计<span id="otherFundRange"></span></div>
-          <div class="other-fund-row">
-            <div class="other-fund-item">
-              <div class="of-label">累计公积金</div>
-              <div class="of-amount" id="cumFund">¥0</div>
-            </div>
-            <div class="other-fund-item">
-              <div class="of-label">累计医保</div>
-              <div class="of-amount" id="cumMedical">¥0</div>
-            </div>
-          </div>
-          <div class="other-fund-hint" id="otherFundHint"></div>
-        </div>
+        <button class="dash-hint-btn" id="dashHintBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          这些数字怎么算的？
+        </button>
 
         <div class="card dash-cat-card" id="dashCatCard">
           <div class="dash-cat-title">本季各分类预算</div>
@@ -644,6 +640,21 @@
         <div class="card report-card" id="reportCard">
           <div class="report-title">本月小结</div>
           <div id="reportBody"></div>
+        </div>
+
+        <div class="card other-fund-card">
+          <div class="other-fund-title">其他款项 · 累计<span id="otherFundRange"></span></div>
+          <div class="other-fund-row">
+            <div class="other-fund-item">
+              <div class="of-label">累计公积金</div>
+              <div class="of-amount" id="cumFund">¥0</div>
+            </div>
+            <div class="other-fund-item">
+              <div class="of-label">累计医保</div>
+              <div class="of-amount" id="cumMedical">¥0</div>
+            </div>
+          </div>
+          <div class="other-fund-hint" id="otherFundHint"></div>
         </div>
 
         <div class="section-header">
@@ -964,6 +975,18 @@
   </div>
 
   <!-- CSV Import Modal -->
+  <!-- 口径说明弹窗 -->
+  <div class="modal-overlay" id="calcModalOverlay">
+    <div class="modal-sheet calc-modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">这些数字怎么算的</div>
+      <div id="calcModalBody"></div>
+      <div class="modal-btn-row" style="margin-top:8px;">
+        <button class="modal-save-btn" id="calcModalClose" style="flex:1">知道了</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="csvModalOverlay">
     <div class="modal-sheet" id="csvModalSheet" style="max-height:90vh; overflow-y:auto;">
       <div class="modal-handle"></div>
@@ -1470,6 +1493,54 @@
         return c;
       }
 
+      // 口径说明弹窗内容：每项都带当下的实际数字，不是写死的文案
+      function buildCalcExplain(v) {
+        const el = document.getElementById('calcModalBody');
+        if (!el) return;
+        const y = n => `¥${fmtAmount(n)}`;
+        const blocks = [
+          {
+            name: '本月结余',
+            formula: `到手 ${y(v.afterTax)} + 记账收入 ${y(v.bkIncome)} − 全部支出 ${y(v.monthSpent + v.irregular)}\n= ${y(v.afterTax + v.bkIncome - v.monthSpent - v.irregular)}`,
+            note: '真实现金流：这个月手里实际多出/少掉多少钱。非常规支出照扣。',
+          },
+          {
+            name: '可支配 · 扣存钱',
+            formula: `到手 ${y(v.afterTax)} + 记账收入 ${y(v.bkIncome)} − 攒钱计划 ${y(v.planSave)}\n= ${y(v.available)}`,
+            note: '这个月能放心花的上限。攒钱计划 = 存钱目标金额 ÷ 期限(月)，已提前预留出来。',
+          },
+          {
+            name: '日常已花',
+            formula: `本月记账支出（不含非常规）= ${y(v.monthSpent)}`,
+            note: v.irregular > 0
+              ? `本月非常规支出 ${y(v.irregular)} 被排除在外（看病、大件等必要开销），避免打乱月度自律判断。`
+              : '记账时勾选「非常规支出」的项（看病、大件等）不计入这里。',
+          },
+          {
+            name: '剩余',
+            formula: `可支配 ${y(v.available)} − 日常已花 ${y(v.monthSpent)}\n= ${y(v.remaining)}`,
+            note: '不含非常规支出。为负说明日常花超了可支配额度。',
+          },
+          {
+            name: `累计剩余（${v.startLabel} 起，共 ${v.nMonths} 个月）`,
+            formula: `初始已存款 ${y(v.cum.initial)} + 到手+记账收入 ${y(v.cum.income)} − 全部支出 ${y(v.cum.spent)}\n= ${y(v.cum.balance)}`,
+            note: '起始月自动取最早有数据的月份，补录更早的月份会自动纳入；提前填的未来月不计入（钱还没到）。',
+          },
+          {
+            name: '累计公积金 / 医保',
+            formula: `公积金 ${y(v.cum.fund)}　医保 ${y(v.cum.medical)}`,
+            note: '按月在「我的财务」填写后累加。不算进任何结余——不是能直接花的钱。',
+          },
+        ];
+        el.innerHTML = blocks.map(b => `
+          <div class="calc-block">
+            <div class="calc-name">${b.name}</div>
+            <div class="calc-formula">${b.formula.replace(/\n/g, '<br>')}</div>
+            <div class="calc-note">${b.note}</div>
+          </div>
+        `).join('');
+      }
+
       // ================= 首页驾驶舱 =================
       function getMonthStart() { const now = new Date(); return new Date(now.getFullYear(), now.getMonth(), 1); }
       function getQuarterStart() { const now = new Date(); return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1); }
@@ -1519,16 +1590,11 @@
         const ofHint = document.getElementById('otherFundHint');
         if (ofHint) ofHint.textContent = `已累计 ${cumMonths.length} 个月。起始月自动取最早有数据的月份，补录更早的月份会自动纳入；提前填的未来月不计入（钱还没到）。公积金、医保不算进结余，不是能直接花的钱。`;
 
-        const dashHint = document.getElementById('dashHint');
-        if (dashHint) {
-          const nMonths = cumMonths.length;
-          const l1 = `可支配 = 到手 ¥${fmtAmount(afterTax)} + 记账收入 ¥${fmtAmount(bkIncome)} − 攒钱计划 ¥${fmtAmount(planSave)}`;
-          const l2 = irregular > 0
-            ? `本月非常规支出 ¥${fmtAmount(irregular)}（看病/大件等），不计入日常已花与剩余，但计入本月结余`
-            : `记账时勾选「非常规支出」的项（看病/大件等）不计入日常已花与剩余`;
-          const l3 = `累计剩余（${startLabel} 起，共 ${nMonths} 个月）= 初始已存款 ¥${fmtAmount(cum.initial)} + 到手+记账收入 ¥${fmtAmount(cum.income)} − 全部支出 ¥${fmtAmount(cum.spent)}`;
-          dashHint.innerHTML = `${l1}<br>${l2}<br>${l3}`;  // 内容全为固定文案 + 数字，无用户输入
-        }
+        // 口径说明弹窗的内容（点「这些数字怎么算的？」时用当下数据现算）
+        buildCalcExplain({
+          m, afterTax, bkIncome, planSave, available, monthSpent, irregular, remaining,
+          cum, startLabel, nMonths: cumMonths.length,
+        });
 
         // 本季度各类支出（按选中月份所在季度）
         const q = Math.floor((m - 1) / 3);
@@ -1708,6 +1774,7 @@
       document.getElementById('savingsInitial')?.addEventListener('input', () => {
         setSavingsInitial(document.getElementById('savingsInitial').value);
         renderSavingsGoal();
+        renderDashboard();  // 初始已存款算进「累计剩余」，首页要跟着重算
       });
 
       // ================= 该不该买 =================
@@ -2467,6 +2534,19 @@
         openAssetModal(parseInt(item.dataset.id, 10));
       });
       document.getElementById('addAssetBtn')?.addEventListener('click', () => openAssetModal(null));
+
+      // ================= 口径说明弹窗 =================
+      const calcModalOverlay = document.getElementById('calcModalOverlay');
+      document.getElementById('dashHintBtn')?.addEventListener('click', () => {
+        renderDashboard();                      // 打开前先按最新数据重算一遍
+        calcModalOverlay.classList.add('show');
+      });
+      document.getElementById('calcModalClose')?.addEventListener('click', () => {
+        calcModalOverlay.classList.remove('show');
+      });
+      calcModalOverlay?.addEventListener('click', (e) => {
+        if (e.target === calcModalOverlay) calcModalOverlay.classList.remove('show');
+      });
 
       // ================= 数据备份：导出 / 导入 =================
       function setBackupStatus(msg) {
